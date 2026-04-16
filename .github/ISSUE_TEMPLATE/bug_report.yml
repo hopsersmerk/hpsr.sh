@@ -1,0 +1,74 @@
+name: Reporte de bug
+description: Reporta un problema reproducible en hpsr.sh
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar un problema. Por favor comparte el mayor contexto técnico posible.
+  - type: input
+    id: distro
+    attributes:
+      label: Distro y versión
+      placeholder: Ubuntu 24.04 / Debian 13
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Entorno
+      options:
+        - VPS real
+        - Máquina virtual
+        - Contenedor
+        - Otro
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Proveedor o contexto
+      placeholder: DigitalOcean, Hetzner, UTM, Docker, etc.
+  - type: textarea
+    id: command
+    attributes:
+      label: Comando usado para ejecutar el script
+      placeholder: curl -fsSL ... | bash
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Pasos para reproducir
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento actual
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes
+      description: Comparte solo la parte relevante y elimina secretos antes de pegarla.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificaciones
+      options:
+        - label: Revisé el README
+          required: true
+        - label: Revisé issues existentes
+          required: true
+        - label: Eliminé secretos antes de enviar el reporte
+          required: true

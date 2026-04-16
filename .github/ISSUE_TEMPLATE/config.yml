@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/hopsersmerk/hpsr.sh/discussions
+    about: Usa Discussions para preguntas generales, ideas o conversación abierta.
+  - name: Política de seguridad
+    url: https://github.com/hopsersmerk/hpsr.sh/blob/main/SECURITY.md
+    about: Revisa aquí cómo reportar vulnerabilidades de seguridad.
+  - name: README
+    url: https://github.com/hopsersmerk/hpsr.sh/blob/main/README.md
+    about: Consulta la documentación principal antes de abrir un issue.

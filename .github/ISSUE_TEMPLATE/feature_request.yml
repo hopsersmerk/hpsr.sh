@@ -1,0 +1,39 @@
+name: Solicitud de mejora
+description: Propón una mejora o nueva capacidad para hpsr.sh
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema o necesidad
+      description: ¿Qué problema real te gustaría resolver?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+      description: Describe la mejora que propones.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacto esperado
+      description: ¿A quién ayuda y por qué sería útil?
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Agrega ejemplos, referencias o detalles técnicos si aplica.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificaciones
+      options:
+        - label: Revisé issues existentes
+          required: true
+        - label: La propuesta encaja con el alcance actual del proyecto
+          required: true
