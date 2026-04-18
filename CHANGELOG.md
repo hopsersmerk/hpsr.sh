@@ -4,6 +4,26 @@ Todos los cambios relevantes de `hpsr.sh` se documentarán aquí.
 
 El formato está inspirado en Keep a Changelog y el proyecto usa una estrategia simple de versionado semántico.
 
+## [0.2.0] - 2026-04-17
+
+### Added
+
+1. Modo `--verify` para auditoría de solo lectura
+2. Gestión de llaves SSH administradas por `hpsr.sh`
+3. Documentación de re-ejecución segura y troubleshooting SSH
+
+### Changed
+
+1. Re-ejecuciones ahora reemplazan solo llaves gestionadas por `hpsr.sh`
+2. La llave privada puede conservarse temporalmente si el usuario no confirma que ya la guardó
+3. El README ahora documenta cuándo usar el setup completo y cuándo usar `--verify`
+
+### Fixed
+
+1. Verificación de llave SSH ignorando comentarios en `authorized_keys`
+2. Limpieza de líneas inválidas dentro de `authorized_keys` durante la rotación de llaves gestionadas
+3. Recuperación más confiable cuando una primera ejecución no deja acceso operativo inmediato
+
 ## [0.1.0] - 2026-04-16
 
 ### Added
@@ -21,23 +41,17 @@ El formato está inspirado en Keep a Changelog y el proyecto usa una estrategia 
 11. Envío de reporte por email en `HTML` y `text`
 12. Soporte bilingüe en español e inglés
 13. Limpieza automática de artefactos sensibles temporales
-14. Modo `--verify` para auditoría de solo lectura
-15. Gestión de llaves SSH administradas por `hpsr.sh`
 
 ### Changed
 
 1. Flujo simplificado para enfocarse en bootstrap básico y seguro
 2. Interfaz de consola refinada para mejor legibilidad
-3. Re-ejecuciones ahora reemplazan solo llaves gestionadas por `hpsr.sh`
-4. La llave privada puede conservarse temporalmente si el usuario no confirma que ya la guardó
 
 ### Fixed
 
 1. Compatibilidad con ejecución vía `curl | bash`
 2. Manejo más seguro de validación SSH en contenedores
 3. Re-ejecución más segura con artefactos temporales únicos
-4. Verificación de llave SSH ignorando comentarios en `authorized_keys`
-5. Limpieza de líneas inválidas dentro de `authorized_keys` durante la rotación de llaves gestionadas
 
 ### Security
 

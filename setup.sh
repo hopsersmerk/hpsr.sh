@@ -14,7 +14,7 @@ fi
 set -u
 
 SCRIPT_NAME="hpsr.sh"
-SCRIPT_VERSION="0.1.0"
+SCRIPT_VERSION="0.2.0"
 SCRIPT_BRAND_PRIMARY="hpsr.sh"
 SCRIPT_BRAND_SECONDARY="hpsr.mx | hopsersmerk.com | hopsersmerk.dev"
 SCRIPT_BASE_DIR="/root/.server-setup"
