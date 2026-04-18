@@ -71,6 +71,9 @@ SSH_KEY_COMMENT=""
 SSH_PRIVATE_KEY_PATH=""
 SSH_PUBLIC_KEY_PATH=""
 SSH_PUBLIC_KEY_CONTENT=""
+SSH_PUBLIC_KEY_BASE=""
+SSH_DERIVED_PUBLIC_KEY_BASE=""
+SSH_KEY_FINGERPRINT=""
 PRINTED_PRIVATE_KEY="no"
 DELETE_SENSITIVE_FILES="no"
 GENERATED_ARCHIVE_PATH=""
@@ -102,6 +105,11 @@ REPORT_NOTE=""
 SENSITIVE_PATHS=()
 REPORT_WRITTEN="no"
 UI_LANG="es"
+HPSR_MANAGED_KEY_REPLACED_COUNT="0"
+HPSR_EXTERNAL_KEY_COUNT="0"
+HPSR_MANAGED_KEY_INSTALLED="no"
+PRIVATE_KEY_SAVE_CONFIRMED="no"
+KEEP_PRIVATE_KEY_AFTER_RUN="no"
 
 BASE_PACKAGES=(curl git openssl nano telnet glances)
 INSTALLER_DEPENDENCIES=(curl openssl openssh-client openssh-server ca-certificates ufw zip)
@@ -117,7 +125,7 @@ lang_is_en() {
   [[ "$UI_LANG" == "en" ]]
 }
 
-tr() {
+msg() {
   local key="$1"
   case "$UI_LANG:$key" in
     es:language) printf 'Idioma / Language' ;;
@@ -300,6 +308,26 @@ tr() {
     en:report_title) printf 'Server Setup Report' ;;
     es:credentials_title) printf 'Paquete seguro de credenciales' ;;
     en:credentials_title) printf 'Secure Credentials Package' ;;
+    es:key_replace_summary) printf 'Resumen de llaves SSH administradas' ;;
+    en:key_replace_summary) printf 'Managed SSH key summary' ;;
+    es:managed_keys_replaced) printf 'Llaves previas de hpsr.sh reemplazadas' ;;
+    en:managed_keys_replaced) printf 'Previous hpsr.sh keys replaced' ;;
+    es:external_keys_kept) printf 'Llaves externas conservadas' ;;
+    en:external_keys_kept) printf 'External keys preserved' ;;
+    es:managed_key_installed) printf 'Nueva llave hpsr.sh instalada' ;;
+    en:managed_key_installed) printf 'New hpsr.sh key installed' ;;
+    es:key_fingerprint) printf 'Fingerprint de la llave' ;;
+    en:key_fingerprint) printf 'Key fingerprint' ;;
+    es:key_verified) printf 'La llave SSH generada fue verificada contra authorized_keys' ;;
+    en:key_verified) printf 'Generated SSH key was verified against authorized_keys' ;;
+    es:key_verify_failed) printf 'No fue posible verificar la llave SSH instalada' ;;
+    en:key_verify_failed) printf 'Failed to verify installed SSH key' ;;
+    es:confirm_private_saved) printf '¿Confirmas que ya guardaste correctamente la llave privada?' ;;
+    en:confirm_private_saved) printf 'Confirm that you have safely saved the private key' ;;
+    es:private_key_kept) printf 'La llave privada temporal se conservara en el servidor hasta que la guardes correctamente' ;;
+    en:private_key_kept) printf 'Temporary private key will remain on the server until you save it correctly' ;;
+    es:private_key_removed) printf 'La llave privada temporal sera eliminada al terminar esta ejecucion' ;;
+    en:private_key_removed) printf 'Temporary private key will be removed at the end of this run' ;;
     *) printf '%s' "$key" ;;
   esac
 }
@@ -318,6 +346,17 @@ register_sensitive_path() {
   local path="$1"
   [[ -n "$path" ]] || return 0
   SENSITIVE_PATHS+=("$path")
+}
+
+unregister_sensitive_path() {
+  local path="$1"
+  local kept=()
+  local entry
+  for entry in "${SENSITIVE_PATHS[@]}"; do
+    [[ "$entry" == "$path" ]] && continue
+    kept+=("$entry")
+  done
+  SENSITIVE_PATHS=("${kept[@]}")
 }
 
 cleanup_sensitive_artifacts() {
@@ -392,7 +431,7 @@ die() {
 }
 
 pause() {
-  printf '%s' "$(tr press_enter)" > "$TTY_OUT"
+  printf '%s' "$(msg press_enter)" > "$TTY_OUT"
   read -r -u 3 _
   printf '\n' > "$TTY_OUT"
 }
@@ -462,9 +501,9 @@ init_tty() {
 
 select_language() {
   local option
-  section "$(tr language_prompt)"
-  option="$(select_from_list "$(tr language)" "$(tr language_es)" "$(tr language_en)")"
-  if [[ "$option" == "$(tr language_en)" ]]; then
+  section "$(msg language_prompt)"
+  option="$(select_from_list "$(msg language)" "$(msg language_es)" "$(msg language_en)")"
+  if [[ "$option" == "$(msg language_en)" ]]; then
     UI_LANG="en"
   else
     UI_LANG="es"
@@ -532,7 +571,7 @@ detect_container() {
 print_banner() {
   printf '%b╔══════════════════════════════════════════════════════════════╗%b\n' "$COLOR_ACCENT" "$ANSI_RESET"
   printf '%b║ %-60s ║%b\n' "$COLOR_ACCENT" "$SCRIPT_BRAND_PRIMARY" "$ANSI_RESET"
-  printf '%b║ %-60s ║%b\n' "$COLOR_ACCENT" "$(tr subtitle)" "$ANSI_RESET"
+  printf '%b║ %-60s ║%b\n' "$COLOR_ACCENT" "$(msg subtitle)" "$ANSI_RESET"
   printf '%b║ %-60s ║%b\n' "$COLOR_ACCENT" "$SCRIPT_BRAND_SECONDARY" "$ANSI_RESET"
   printf '%b╚══════════════════════════════════════════════════════════════╝%b\n' "$COLOR_ACCENT" "$ANSI_RESET"
   key_value "Version" "$SCRIPT_VERSION"
@@ -546,7 +585,7 @@ require_root() {
 }
 
 prechecks() {
-  section "$(tr precheck)"
+  section "$(msg precheck)"
   require_root
   init_workspace
   detect_os
@@ -578,19 +617,19 @@ prechecks() {
     print_warn "Container environment detected; some system-level changes may be skipped"
   fi
 
-  subsection "$(tr system_snapshot)"
-  key_value "$(tr hostname)" "$CURRENT_HOSTNAME"
-  key_value "$(tr timezone)" "$CURRENT_TIMEZONE"
-  key_value "$(tr ssh_port)" "$CURRENT_SSH_PORT"
+  subsection "$(msg system_snapshot)"
+  key_value "$(msg hostname)" "$CURRENT_HOSTNAME"
+  key_value "$(msg timezone)" "$CURRENT_TIMEZONE"
+  key_value "$(msg ssh_port)" "$CURRENT_SSH_PORT"
   if [[ -n "$PUBLIC_IP" ]]; then
-    key_value "$(tr public_ip)" "$PUBLIC_IP"
+    key_value "$(msg public_ip)" "$PUBLIC_IP"
   fi
 
-  confirm "$(tr continue)" yes || exit 0
+  confirm "$(msg continue)" yes || exit 0
 }
 
 apt_update_once() {
-  section "$(tr package_metadata)"
+  section "$(msg package_metadata)"
   run_cmd apt-get update || die "apt-get update failed. Check $LOG_FILE"
   print_ok "Package metadata updated"
 }
@@ -606,7 +645,7 @@ install_packages() {
 }
 
 ensure_installer_dependencies() {
-  section "$(tr min_dependencies)"
+  section "$(msg min_dependencies)"
   local missing=()
   local pkg
   for pkg in "${INSTALLER_DEPENDENCIES[@]}"; do
@@ -649,7 +688,7 @@ EOF
 }
 
 configure_resend() {
-  section "$(tr resend_section)"
+  section "$(msg resend_section)"
   if lang_is_en; then
     printf 'Use Resend to:\n'
     printf -- '- send a setup summary\n'
@@ -662,28 +701,28 @@ configure_resend() {
     printf -- '- enviar opcionalmente credenciales/llaves como adjuntos cifrados\n\n'
   fi
 
-  if ! confirm "$(tr enable_resend)" no; then
+  if ! confirm "$(msg enable_resend)" no; then
     RESEND_ENABLED="no"
     return 0
   fi
 
   while true; do
-    RESEND_API_KEY="$(prompt_secret "$(tr resend_api_key)")"
-    RESEND_FROM="$(prompt "$(tr from_address)")"
-    RESEND_TO="$(prompt "$(tr to_address)")"
+    RESEND_API_KEY="$(prompt_secret "$(msg resend_api_key)")"
+    RESEND_FROM="$(prompt "$(msg from_address)")"
+    RESEND_TO="$(prompt "$(msg to_address)")"
 
-    printf '\n%s\n\n' "$(tr running_test)"
+    printf '\n%s\n\n' "$(msg running_test)"
     if resend_test_request; then
-      print_ok "$(tr resend_test_passed)"
+      print_ok "$(msg resend_test_passed)"
       RESEND_ENABLED="yes"
       return 0
     fi
 
-    print_fail "$(tr resend_test_failed)"
-    print_warn "$(tr review_http)"
-    printf '%s\n' "$(tr choose_option)"
-    printf '1. %s\n' "$(tr reconfigure_resend)"
-    printf '2. %s\n' "$(tr continue_without_resend)"
+    print_fail "$(msg resend_test_failed)"
+    print_warn "$(msg review_http)"
+    printf '%s\n' "$(msg choose_option)"
+    printf '1. %s\n' "$(msg reconfigure_resend)"
+    printf '2. %s\n' "$(msg continue_without_resend)"
     local option
     option="$(prompt 'Select' '1')"
     if [[ "$option" == "2" ]]; then
@@ -764,20 +803,20 @@ select_multiple_from_list() {
 }
 
 configure_identity() {
-  section "$(tr identity_section)"
-  subsection "$(tr hostname_title)"
-  key_value "$(tr current)" "$CURRENT_HOSTNAME"
-  if ! confirm "$(tr keep_hostname)" yes; then
-    HOSTNAME_VALUE="$(prompt "$(tr new_hostname)")"
+  section "$(msg identity_section)"
+  subsection "$(msg hostname_title)"
+  key_value "$(msg current)" "$CURRENT_HOSTNAME"
+  if ! confirm "$(msg keep_hostname)" yes; then
+    HOSTNAME_VALUE="$(prompt "$(msg new_hostname)")"
   fi
 
-  subsection "$(tr timezone_title)"
-  key_value "$(tr current)" "$CURRENT_TIMEZONE"
-  if confirm "$(tr try_tz_suggestion)" yes; then
+  subsection "$(msg timezone_title)"
+  key_value "$(msg current)" "$CURRENT_TIMEZONE"
+  if confirm "$(msg try_tz_suggestion)" yes; then
     TIMEZONE_IP_SUGGESTION="$(timezone_ip_suggestion)"
     if [[ -n "$TIMEZONE_IP_SUGGESTION" ]]; then
-      key_value "$(tr suggested)" "$TIMEZONE_IP_SUGGESTION"
-      if confirm "$(tr use_timezone)" yes; then
+      key_value "$(msg suggested)" "$TIMEZONE_IP_SUGGESTION"
+      if confirm "$(msg use_timezone)" yes; then
         TIMEZONE_VALUE="$TIMEZONE_IP_SUGGESTION"
         return 0
       fi
@@ -786,13 +825,13 @@ configure_identity() {
     fi
   fi
 
-  if confirm "$(tr keep_timezone)" yes; then
+  if confirm "$(msg keep_timezone)" yes; then
     TIMEZONE_VALUE="$CURRENT_TIMEZONE"
     return 0
   fi
 
   local region
-  region="$(select_from_list "$(tr tz_region)" America Europe Asia Africa Pacific Etc)"
+  region="$(select_from_list "$(msg tz_region)" America Europe Asia Africa Pacific Etc)"
   [[ -n "$region" ]] || region="America"
   mapfile -t tz_matches < <(load_timezones | grep "^${region}/" | head -n 200)
   if [[ "${#tz_matches[@]}" -eq 0 ]]; then
@@ -800,27 +839,27 @@ configure_identity() {
     print_warn "No timezones found for region $region; keeping current timezone"
     return 0
   fi
-  TIMEZONE_VALUE="$(select_from_list "$(tr select_timezone)" "${tz_matches[@]}")"
+  TIMEZONE_VALUE="$(select_from_list "$(msg select_timezone)" "${tz_matches[@]}")"
   [[ -n "$TIMEZONE_VALUE" ]] || TIMEZONE_VALUE="$CURRENT_TIMEZONE"
 }
 
 configure_admin_user() {
-  section "$(tr admin_section)"
+  section "$(msg admin_section)"
   while true; do
-    ADMIN_USER="$(prompt "$(tr admin_username)")"
+    ADMIN_USER="$(prompt "$(msg admin_username)")"
     if [[ -n "$ADMIN_USER" && "$ADMIN_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
       break
     fi
     print_warn "Use a valid Linux username."
   done
   while true; do
-    ADMIN_PASSWORD="$(prompt_secret "$(tr admin_password) '$ADMIN_USER'")"
+    ADMIN_PASSWORD="$(prompt_secret "$(msg admin_password) '$ADMIN_USER'")"
     [[ -n "$ADMIN_PASSWORD" ]] || {
       print_warn "Password cannot be empty."
       continue
     }
     local confirm_password
-    confirm_password="$(prompt_secret "$(tr confirm_password)")"
+    confirm_password="$(prompt_secret "$(msg confirm_password)")"
     if [[ "$ADMIN_PASSWORD" == "$confirm_password" ]]; then
       break
     fi
@@ -833,24 +872,24 @@ validate_port() {
 }
 
 collect_ssh_key_setup() {
-  section "$(tr ssh_access_section)"
-  subsection "$(tr ssh_access_title)"
+  section "$(msg ssh_access_section)"
+  subsection "$(msg ssh_access_title)"
   local option
-  option="$(select_from_list "$(tr ssh_access_title)" "$(tr ssh_access_generate)" "$(tr ssh_access_paste)" "$(tr ssh_access_file)")"
+  option="$(select_from_list "$(msg ssh_access_title)" "$(msg ssh_access_generate)" "$(msg ssh_access_paste)" "$(msg ssh_access_file)")"
   case "$option" in
-    "$(tr ssh_access_paste)") SSH_KEY_MODE="paste" ;;
-    "$(tr ssh_access_file)") SSH_KEY_MODE="file" ;;
+    "$(msg ssh_access_paste)") SSH_KEY_MODE="paste" ;;
+    "$(msg ssh_access_file)") SSH_KEY_MODE="file" ;;
     *) SSH_KEY_MODE="generate" ;;
   esac
 
   if [[ "$SSH_KEY_MODE" == "generate" ]]; then
-    subsection "$(tr key_type_title)"
-    option="$(select_from_list "$(tr key_type_title)" 'ed25519 (recommended)' 'rsa')"
+    subsection "$(msg key_type_title)"
+    option="$(select_from_list "$(msg key_type_title)" 'ed25519 (recommended)' 'rsa')"
     if [[ "$option" == "rsa" ]]; then
       SSH_KEY_TYPE="rsa"
     fi
-    SSH_KEY_COMMENT="$(prompt "$(tr key_comment)" "$ADMIN_USER@$HOSTNAME_VALUE")"
-    SSH_PRIVATE_KEY_PATH="$SSH_GENERATED_DIR/${TIMESTAMP}-${ADMIN_USER}_${SSH_KEY_TYPE}"
+    SSH_KEY_COMMENT="hpsr.sh|host=$(slugify "$HOSTNAME_VALUE")|user=$ADMIN_USER|ts=$TIMESTAMP"
+    SSH_PRIVATE_KEY_PATH="$SSH_GENERATED_DIR/hpsr-${TIMESTAMP}-$(slugify "$HOSTNAME_VALUE")-${ADMIN_USER}_${SSH_KEY_TYPE}"
     SSH_PUBLIC_KEY_PATH="$SSH_PRIVATE_KEY_PATH.pub"
     register_sensitive_path "$SSH_PRIVATE_KEY_PATH"
     register_sensitive_path "$SSH_PUBLIC_KEY_PATH"
@@ -862,14 +901,14 @@ collect_ssh_key_setup() {
 }
 
 configure_ssh_hardening_inputs() {
-  section "$(tr ssh_hardening_section)"
-  subsection "$(tr security_policy)"
-  key_value "$(tr current)" "$CURRENT_SSH_PORT"
-  key_value "$(tr suggested)" "666"
+  section "$(msg ssh_hardening_section)"
+  subsection "$(msg security_policy)"
+  key_value "$(msg current)" "$CURRENT_SSH_PORT"
+  key_value "$(msg suggested)" "666"
   printf '\n'
 
   while true; do
-    SSH_PORT="$(prompt "$(tr new_ssh_port)" '666')"
+    SSH_PORT="$(prompt "$(msg new_ssh_port)" '666')"
     if validate_port "$SSH_PORT"; then
       break
     fi
@@ -877,36 +916,36 @@ configure_ssh_hardening_inputs() {
   done
   DISABLE_ROOT_SSH="yes"
   DISABLE_PASSWORD_AUTH="yes"
-  print_ok "$(tr root_ssh_disabled)"
-  print_ok "$(tr password_ssh_disabled)"
+  print_ok "$(msg root_ssh_disabled)"
+  print_ok "$(msg password_ssh_disabled)"
 }
 
 collect_firewall_inputs() {
-  section "$(tr firewall_section)"
-  subsection "$(tr allowed_ports)"
+  section "$(msg firewall_section)"
+  subsection "$(msg allowed_ports)"
   key_value "SSH" "$SSH_PORT/tcp"
   key_value "HTTP" "80/tcp"
   key_value "HTTPS" "443/tcp"
   printf '\n'
-  if confirm "$(tr add_extra_ports)" no; then
-    UFW_EXTRA_PORTS="$(prompt "$(tr enter_ports)")"
+  if confirm "$(msg add_extra_ports)" no; then
+    UFW_EXTRA_PORTS="$(prompt "$(msg enter_ports)")"
   fi
 }
 
 collect_fail2ban_inputs() {
-  section "$(tr fail2ban_section)"
-  printf '%s\n' "$(tr fail2ban_help)"
-  subsection "$(tr ssh_jail)"
+  section "$(msg fail2ban_section)"
+  printf '%s\n' "$(msg fail2ban_help)"
+  subsection "$(msg ssh_jail)"
   printf -- '- bantime  : 1h\n'
   printf -- '- findtime : 10m\n'
   printf -- '- maxretry : 5\n\n'
   ENABLE_FAIL2BAN="yes"
-  print_ok "$(tr fail2ban_enabled)"
+  print_ok "$(msg fail2ban_enabled)"
 }
 
 collect_unattended_inputs() {
-  section "$(tr updates_section)"
-  if confirm "$(tr enable_updates)" yes; then
+  section "$(msg updates_section)"
+  if confirm "$(msg enable_updates)" yes; then
     ENABLE_UNATTENDED="yes"
   else
     ENABLE_UNATTENDED="no"
@@ -914,7 +953,72 @@ collect_unattended_inputs() {
 }
 
 generate_password() {
-  openssl rand -base64 24 | tr -d '\n' | tr '/+' 'AB'
+  openssl rand -hex 16
+}
+
+ssh_public_key_base() {
+  local key_line="$1"
+  printf '%s\n' "$key_line" | awk '{print $1" "$2}'
+}
+
+count_non_managed_keys() {
+  local auth_file="$1"
+  [[ -f "$auth_file" ]] || {
+    printf '0'
+    return 0
+  }
+  awk '
+    /^# BEGIN hpsr\.sh managed key$/ {managed=1; next}
+    /^# END hpsr\.sh managed key$/ {managed=0; next}
+    managed {next}
+    /^[[:space:]]*$/ {next}
+    /^#/ {next}
+    {count++}
+    END {print count+0}
+  ' "$auth_file"
+}
+
+count_managed_key_blocks() {
+  local auth_file="$1"
+  [[ -f "$auth_file" ]] || {
+    printf '0'
+    return 0
+  }
+  grep -c '^# BEGIN hpsr\.sh managed key$' "$auth_file" 2>/dev/null || printf '0'
+}
+
+remove_managed_keys_from_authorized_keys() {
+  local auth_file="$1"
+  local temp_file="$GENERATED_DIR/authorized_keys-clean-$TIMESTAMP"
+  register_sensitive_path "$temp_file"
+  if [[ ! -f "$auth_file" ]]; then
+    HPSR_MANAGED_KEY_REPLACED_COUNT="0"
+    HPSR_EXTERNAL_KEY_COUNT="0"
+    return 0
+  fi
+  HPSR_MANAGED_KEY_REPLACED_COUNT="$(count_managed_key_blocks "$auth_file")"
+  HPSR_EXTERNAL_KEY_COUNT="$(count_non_managed_keys "$auth_file")"
+  awk '
+    /^# BEGIN hpsr\.sh managed key$/ {managed=1; next}
+    /^# END hpsr\.sh managed key$/ {managed=0; next}
+    !managed {print}
+  ' "$auth_file" > "$temp_file" || return 1
+  mv "$temp_file" "$auth_file" || return 1
+  unregister_sensitive_path "$temp_file"
+  return 0
+}
+
+verify_generated_key_installation() {
+  local auth_file="$1"
+  local derived_line=""
+  [[ "$SSH_KEY_MODE" == "generate" ]] || return 0
+  [[ -f "$SSH_PRIVATE_KEY_PATH" ]] || return 1
+  derived_line="$(ssh-keygen -y -f "$SSH_PRIVATE_KEY_PATH" 2>>"$LOG_FILE" || true)"
+  [[ -n "$derived_line" ]] || return 1
+  SSH_DERIVED_PUBLIC_KEY_BASE="$(ssh_public_key_base "$derived_line")"
+  SSH_KEY_FINGERPRINT="$(ssh-keygen -lf "$SSH_PRIVATE_KEY_PATH" 2>>"$LOG_FILE" | awk '{print $2}' || true)"
+  [[ -n "$SSH_DERIVED_PUBLIC_KEY_BASE" ]] || return 1
+  grep -Fqx "$SSH_DERIVED_PUBLIC_KEY_BASE" "$auth_file" 2>/dev/null
 }
 
 validate_public_key() {
@@ -1006,6 +1110,7 @@ generate_ssh_keys() {
   rm -f "$SSH_PRIVATE_KEY_PATH" "$SSH_PUBLIC_KEY_PATH" >> "$LOG_FILE" 2>&1 || true
   run_cmd ssh-keygen "${key_args[@]}" -C "$SSH_KEY_COMMENT" -f "$SSH_PRIVATE_KEY_PATH" -N '' || die "Failed to generate SSH key pair"
   SSH_PUBLIC_KEY_CONTENT="$(tr -d '\r\n' < "$SSH_PUBLIC_KEY_PATH")"
+  SSH_PUBLIC_KEY_BASE="$(ssh_public_key_base "$SSH_PUBLIC_KEY_CONTENT")"
   print_ok "Generated SSH key pair at $SSH_PRIVATE_KEY_PATH"
 }
 
@@ -1016,10 +1121,12 @@ load_public_key_content() {
     if ! validate_public_key "$SSH_PUBLIC_KEY_CONTENT"; then
       die "The pasted public key is not valid."
     fi
+    SSH_PUBLIC_KEY_BASE="$(ssh_public_key_base "$SSH_PUBLIC_KEY_CONTENT")"
   else
     [[ -r "$SSH_PUBLIC_KEY_PATH" ]] || die "Public key file not found: $SSH_PUBLIC_KEY_PATH"
     SSH_PUBLIC_KEY_CONTENT="$(tr -d '\r\n' < "$SSH_PUBLIC_KEY_PATH")"
     validate_public_key "$SSH_PUBLIC_KEY_CONTENT" || die "The public key file content is not valid."
+    SSH_PUBLIC_KEY_BASE="$(ssh_public_key_base "$SSH_PUBLIC_KEY_CONTENT")"
   fi
 }
 
@@ -1028,11 +1135,21 @@ install_public_key_for_user() {
   touch "$auth_file"
   chmod 600 "$auth_file"
   chown "$ADMIN_USER:$ADMIN_USER" "$auth_file"
-  if ! grep -Fqx "$SSH_PUBLIC_KEY_CONTENT" "$auth_file" 2>/dev/null; then
-    printf '%s\n' "$SSH_PUBLIC_KEY_CONTENT" >> "$auth_file"
-  fi
+  remove_managed_keys_from_authorized_keys "$auth_file" || die "Failed to rotate managed SSH keys in authorized_keys"
+  printf '# BEGIN hpsr.sh managed key\n' >> "$auth_file"
+  printf '%s\n' "$SSH_PUBLIC_KEY_CONTENT" >> "$auth_file"
+  printf '# END hpsr.sh managed key\n' >> "$auth_file"
   chown "$ADMIN_USER:$ADMIN_USER" "$auth_file"
-  print_ok "Installed public key for $ADMIN_USER"
+  if verify_generated_key_installation "$auth_file"; then
+    HPSR_MANAGED_KEY_INSTALLED="yes"
+    print_ok "Installed public key for $ADMIN_USER"
+    if [[ "$SSH_KEY_MODE" == "generate" ]]; then
+      print_ok "$(msg key_verified)"
+    fi
+  else
+    HPSR_MANAGED_KEY_INSTALLED="no"
+    die "$(msg key_verify_failed)"
+  fi
 }
 
 backup_ssh_config() {
@@ -1210,10 +1327,10 @@ create_swap() {
 }
 
 show_review() {
-  section "$(tr review_section)"
+  section "$(msg review_section)"
   subsection "$(lang_is_en && printf 'Identity' || printf 'Identidad')"
-  key_value "$(tr hostname)" "$HOSTNAME_VALUE"
-  key_value "$(tr timezone)" "$TIMEZONE_VALUE"
+  key_value "$(msg hostname)" "$HOSTNAME_VALUE"
+  key_value "$(msg timezone)" "$TIMEZONE_VALUE"
 
   subsection "$(lang_is_en && printf 'Admin Access' || printf 'Acceso administrativo')"
   key_value "$(lang_is_en && printf 'User' || printf 'Usuario')" "$ADMIN_USER"
@@ -1243,9 +1360,9 @@ show_review() {
   key_value "$(lang_is_en && printf 'Status' || printf 'Estado')" "$RESEND_TEST_STATUS"
 
   local apply_input
-  apply_input="$(prompt "$(tr final_apply)" '')"
+  apply_input="$(prompt "$(msg final_apply)" '')"
   apply_input="${apply_input,,}"
-  [[ "$apply_input" == "apply" || "$apply_input" == "yes" || "$apply_input" == "y" || "$apply_input" == "si" || "$apply_input" == "sí" ]] || die "$(tr aborted)"
+  [[ "$apply_input" == "apply" || "$apply_input" == "yes" || "$apply_input" == "y" || "$apply_input" == "si" || "$apply_input" == "sí" ]] || die "$(msg aborted)"
 }
 
 build_credentials_archive() {
@@ -1262,6 +1379,7 @@ build_credentials_archive() {
   fi
   printf 'User: %s\nSSH Port: %s\nHostname: %s\nTimezone: %s\n' "$ADMIN_USER" "$SSH_PORT" "$HOSTNAME_VALUE" "$TIMEZONE_VALUE" > "$staging_dir/README.txt"
   GENERATED_ARCHIVE_PASSWORD="$(generate_password)"
+  [[ -n "$GENERATED_ARCHIVE_PASSWORD" ]] || die "Failed to generate archive password"
   GENERATED_ARCHIVE_PATH="$ARCHIVE_DIR/hpsr-credentials-$TIMESTAMP.zip"
   register_sensitive_path "$GENERATED_ARCHIVE_PATH"
   run_cmd zip -j -P "$GENERATED_ARCHIVE_PASSWORD" "$GENERATED_ARCHIVE_PATH" "$staging_dir"/* || die "Failed to create encrypted credentials archive"
@@ -1302,12 +1420,12 @@ EOF
     -H 'Content-Type: application/json' \
     --data-binary "@$payload_file" 2>>"$LOG_FILE" || true)"
   if [[ "$http_code" != "200" && "$http_code" != "201" ]]; then
-    print_fail "$(tr resend_failed)"
+    print_fail "$(msg resend_failed)"
     printf 'HTTP status : %s\n' "$http_code"
     printf 'Response    : %s\n' "$(tr -d '\r' < "$response_file" 2>/dev/null || true)"
     return 1
   fi
-  print_ok "$(tr email_sent)"
+  print_ok "$(msg email_sent)"
   return 0
 }
 
@@ -1471,8 +1589,13 @@ write_report() {
   local report_private_key_path="not-generated"
   local report_public_key_path="not-generated"
   if [[ "$SSH_KEY_MODE" == "generate" ]]; then
-    report_private_key_path="temporary-generated-and-removed"
-    report_public_key_path="temporary-generated-and-removed"
+    if [[ "$KEEP_PRIVATE_KEY_AFTER_RUN" == "yes" ]]; then
+      report_private_key_path="$SSH_PRIVATE_KEY_PATH"
+      report_public_key_path="$SSH_PUBLIC_KEY_PATH"
+    else
+      report_private_key_path="temporary-generated-and-removed"
+      report_public_key_path="temporary-generated-and-removed"
+    fi
   elif [[ -n "$SSH_PUBLIC_KEY_PATH" ]]; then
     report_public_key_path="$SSH_PUBLIC_KEY_PATH"
   fi
@@ -1503,6 +1626,10 @@ $(lang_is_en && printf '# hpsr.sh Server Setup Report' || printf '# Reporte de c
 - $(lang_is_en && printf 'Root login' || printf 'Login root'): $(lang_is_en && printf 'disabled' || printf 'deshabilitado')
 - $(lang_is_en && printf 'Password authentication' || printf 'Autenticacion por contrasena'): $(lang_is_en && printf 'disabled' || printf 'deshabilitada')
 - $(lang_is_en && printf 'Public key mode' || printf 'Modo de llave publica'): $SSH_KEY_MODE
+- $(msg managed_key_installed): $HPSR_MANAGED_KEY_INSTALLED
+- $(msg managed_keys_replaced): $HPSR_MANAGED_KEY_REPLACED_COUNT
+- $(msg external_keys_kept): $HPSR_EXTERNAL_KEY_COUNT
+- $(msg key_fingerprint): ${SSH_KEY_FINGERPRINT:-not-available}
 - $(lang_is_en && printf 'Private key path' || printf 'Ruta de la llave privada'): $report_private_key_path
 - $(lang_is_en && printf 'Public key path' || printf 'Ruta de la llave publica'): $report_public_key_path
 
@@ -1542,7 +1669,7 @@ $(lang_is_en && printf '# hpsr.sh Server Setup Report' || printf '# Reporte de c
 
 ## $(lang_is_en && printf 'Files' || printf 'Archivos')
 
-- $(tr report): $REPORT_FILE
+- $(msg report): $REPORT_FILE
 - Log: $LOG_FILE
 - $(lang_is_en && printf 'Base directory' || printf 'Directorio base'): $SCRIPT_BASE_DIR
 
@@ -1553,34 +1680,54 @@ $(lang_is_en && printf '# hpsr.sh Server Setup Report' || printf '# Reporte de c
 $REPORT_NOTE
 EOF
   REPORT_WRITTEN="yes"
-  print_ok "$(tr markdown_report) $REPORT_FILE"
+  print_ok "$(msg markdown_report) $REPORT_FILE"
 }
 
 post_actions() {
-  section "$(tr post_actions)"
+  section "$(msg post_actions)"
+  subsection "$(msg key_replace_summary)"
+  key_value "$(msg managed_keys_replaced)" "$HPSR_MANAGED_KEY_REPLACED_COUNT"
+  key_value "$(msg external_keys_kept)" "$HPSR_EXTERNAL_KEY_COUNT"
+  key_value "$(msg managed_key_installed)" "$HPSR_MANAGED_KEY_INSTALLED"
+  if [[ -n "$SSH_KEY_FINGERPRINT" ]]; then
+    key_value "$(msg key_fingerprint)" "$SSH_KEY_FINGERPRINT"
+  fi
+
   if [[ -n "$SSH_PRIVATE_KEY_PATH" && -f "$SSH_PRIVATE_KEY_PATH" ]]; then
-    subsection "$(tr private_key)"
+    subsection "$(msg private_key)"
     key_value "Path" "$SSH_PRIVATE_KEY_PATH"
-    if confirm "$(tr print_private_key)" no; then
+    if [[ -n "$SSH_KEY_FINGERPRINT" ]]; then
+      key_value "$(msg key_fingerprint)" "$SSH_KEY_FINGERPRINT"
+    fi
+    if confirm "$(msg print_private_key)" no; then
       PRINTED_PRIVATE_KEY="yes"
       printf '\n%b' "$COLOR_ACCENT"
       cat "$SSH_PRIVATE_KEY_PATH"
       printf '%b\n' "$ANSI_RESET"
     fi
+    if confirm "$(msg confirm_private_saved)" no; then
+      PRIVATE_KEY_SAVE_CONFIRMED="yes"
+      print_ok "$(msg private_key_removed)"
+    else
+      KEEP_PRIVATE_KEY_AFTER_RUN="yes"
+      unregister_sensitive_path "$SSH_PRIVATE_KEY_PATH"
+      unregister_sensitive_path "$SSH_PUBLIC_KEY_PATH"
+      print_warn "$(msg private_key_kept)"
+    fi
   fi
 
   if [[ "$RESEND_ENABLED" == "yes" ]]; then
-    if confirm "$(tr send_report)" yes; then
-      send_resend_email "$SCRIPT_NAME - $(tr report_title) - $HOSTNAME_VALUE" "$(report_email_text)" "$(report_email_html)" || true
+    if confirm "$(msg send_report)" yes; then
+      send_resend_email "$SCRIPT_NAME - $(msg report_title) - $HOSTNAME_VALUE" "$(report_email_text)" "$(report_email_html)" || true
       RESEND_SENT_REPORT="yes"
     fi
-    if confirm "$(tr send_credentials)" no; then
+    if confirm "$(msg send_credentials)" no; then
       build_credentials_archive
-      printf '\n%s:\n%s\n' "$(tr archive_password)" "$GENERATED_ARCHIVE_PASSWORD"
+      printf '\n%s:\n%s\n' "$(msg archive_password)" "$GENERATED_ARCHIVE_PASSWORD"
       if lang_is_en; then
-        send_resend_email "$SCRIPT_NAME - $(tr credentials_title) - $HOSTNAME_VALUE" "Encrypted credentials package attached. The password was only printed in the console." "<p>Encrypted credentials package attached. The password was only printed in the console.</p>" "$GENERATED_ARCHIVE_PATH" || true
+        send_resend_email "$SCRIPT_NAME - $(msg credentials_title) - $HOSTNAME_VALUE" "Encrypted credentials package attached. The password was only printed in the console." "<p>Encrypted credentials package attached. The password was only printed in the console.</p>" "$GENERATED_ARCHIVE_PATH" || true
       else
-        send_resend_email "$SCRIPT_NAME - $(tr credentials_title) - $HOSTNAME_VALUE" "Se adjunto un paquete cifrado de credenciales. La contrasena solo se imprimio en la consola." "<p>Se adjunto un paquete cifrado de credenciales. La contrasena solo se imprimio en la consola.</p>" "$GENERATED_ARCHIVE_PATH" || true
+        send_resend_email "$SCRIPT_NAME - $(msg credentials_title) - $HOSTNAME_VALUE" "Se adjunto un paquete cifrado de credenciales. La contrasena solo se imprimio en la consola." "<p>Se adjunto un paquete cifrado de credenciales. La contrasena solo se imprimio en la consola.</p>" "$GENERATED_ARCHIVE_PATH" || true
       fi
       RESEND_SENT_CREDENTIALS="yes"
     fi
@@ -1588,21 +1735,25 @@ post_actions() {
 
   cleanup_sensitive_artifacts
   write_report
-  print_ok "$(tr sensitive_removed)"
+  print_ok "$(msg sensitive_removed)"
 
-  printf '\n%s\n\n' "$(tr setup_completed)"
-  printf '%s:\n' "$(tr important)"
-  printf -- '- %s\n' "$(tr test_ssh_note)"
+  printf '\n%s\n\n' "$(msg setup_completed)"
+  printf '%s:\n' "$(msg important)"
+  printf -- '- %s\n' "$(msg test_ssh_note)"
   if [[ -n "$PUBLIC_IP" && "$SSH_KEY_MODE" == "generate" ]]; then
-    printf -- '- %s\n' "$(tr private_removed_note)"
-    printf -- '- %s: %s@%s (%s %s)\n' "$(tr ssh_target)" "$ADMIN_USER" "$PUBLIC_IP" "$(lang_is_en && printf 'port' || printf 'puerto')" "$SSH_PORT"
+    if [[ "$KEEP_PRIVATE_KEY_AFTER_RUN" == "yes" ]]; then
+      printf -- '- %s: %s\n' "$(msg private_key)" "$SSH_PRIVATE_KEY_PATH"
+    else
+      printf -- '- %s\n' "$(msg private_removed_note)"
+    fi
+    printf -- '- %s: %s@%s (%s %s)\n' "$(msg ssh_target)" "$ADMIN_USER" "$PUBLIC_IP" "$(lang_is_en && printf 'port' || printf 'puerto')" "$SSH_PORT"
   fi
-  printf -- '- %s: %s\n' "$(tr report)" "$REPORT_FILE"
-  printf -- '- %s: %s\n' "$(tr log)" "$LOG_FILE"
+  printf -- '- %s: %s\n' "$(msg report)" "$REPORT_FILE"
+  printf -- '- %s: %s\n' "$(msg log)" "$LOG_FILE"
 }
 
 apply_all_changes() {
-  section "$(tr applying)"
+  section "$(msg applying)"
   apply_hostname
   apply_timezone
   ensure_user_exists
@@ -1625,8 +1776,8 @@ main() {
   select_language
   print_banner
   printf '\n'
-  print_bold "$(tr intro_title)"
-  printf '%s\n\n' "$(tr intro_note)"
+  print_bold "$(msg intro_title)"
+  printf '%s\n\n' "$(msg intro_note)"
   pause
   prechecks
   apt_update_once
