@@ -21,17 +21,23 @@ El formato está inspirado en Keep a Changelog y el proyecto usa una estrategia 
 11. Envío de reporte por email en `HTML` y `text`
 12. Soporte bilingüe en español e inglés
 13. Limpieza automática de artefactos sensibles temporales
+14. Modo `--verify` para auditoría de solo lectura
+15. Gestión de llaves SSH administradas por `hpsr.sh`
 
 ### Changed
 
 1. Flujo simplificado para enfocarse en bootstrap básico y seguro
 2. Interfaz de consola refinada para mejor legibilidad
+3. Re-ejecuciones ahora reemplazan solo llaves gestionadas por `hpsr.sh`
+4. La llave privada puede conservarse temporalmente si el usuario no confirma que ya la guardó
 
 ### Fixed
 
 1. Compatibilidad con ejecución vía `curl | bash`
 2. Manejo más seguro de validación SSH en contenedores
 3. Re-ejecución más segura con artefactos temporales únicos
+4. Verificación de llave SSH ignorando comentarios en `authorized_keys`
+5. Limpieza de líneas inválidas dentro de `authorized_keys` durante la rotación de llaves gestionadas
 
 ### Security
 

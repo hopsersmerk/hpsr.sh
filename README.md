@@ -79,6 +79,17 @@ Esto permite dejar de depender de `root` como usuario de acceso operativo.
 
 Por defecto, el flujo está orientado a generar un nuevo par de llaves para el usuario administrativo.
 
+Cuando la llave es generada por el script, `hpsr.sh` ahora la gestiona como una llave administrada por el propio proyecto.
+
+Esto significa que:
+
+1. El nombre del archivo usa prefijo `hpsr-`.
+2. La llave pública incluye un comentario estructurado identificable.
+3. La llave se instala dentro de un bloque administrado en `authorized_keys`.
+4. En re-ejecuciones, el script reemplaza solo llaves previas de `hpsr.sh`.
+5. Las llaves externas o agregadas manualmente se conservan.
+6. La llave generada se verifica contra `authorized_keys` antes de continuar.
+
 ### 4. Endurece SSH
 
 El script aplica decisiones de hardening básicas y razonables para un servidor nuevo:
@@ -180,7 +191,9 @@ Si el flujo genera llaves o archivos temporales sensibles, `hpsr.sh`:
 1. Los ubica en una ruta temporal controlada.
 2. Puede empaquetarlos en un `.zip` cifrado si se van a enviar por correo.
 3. Imprime la contraseña del archivo cifrado solo en consola.
-4. Elimina automáticamente los artefactos sensibles temporales al terminar, incluso si el script falla o se interrumpe.
+4. Pide confirmación antes de eliminar la llave privada generada.
+5. Si el usuario no confirma que ya la guardó correctamente, la puede conservar temporalmente en el servidor.
+6. Limpia automáticamente los artefactos sensibles temporales que sí deben eliminarse al terminar.
 
 ## Qué no hace
 
@@ -238,6 +251,21 @@ curl -fsSL https://raw.githubusercontent.com/hopsersmerk/hpsr.sh/main/setup.sh -
 bash setup.sh
 ```
 
+### Opción 3: verificar una configuración existente
+
+Puedes auditar el estado actual del servidor sin reaplicar cambios con:
+
+```bash
+bash setup.sh --verify
+```
+
+Opcionalmente puedes forzar idioma:
+
+```bash
+bash setup.sh --verify --lang es
+bash setup.sh --verify --lang en
+```
+
 ## Flujo del asistente
 
 El flujo actual del script incluye, de forma resumida:
@@ -255,6 +283,60 @@ El flujo actual del script incluye, de forma resumida:
 11. Revisión final.
 12. Aplicación de cambios.
 13. Acciones posteriores, reporte y limpieza de temporales sensibles.
+
+## Re-ejecución segura del script
+
+Sí, `hpsr.sh` puede volver a ejecutarse sobre el mismo servidor en varios escenarios normales.
+
+### Casos donde sí conviene re-ejecutarlo
+
+1. La primera ejecución se interrumpió antes de terminar.
+2. `authorized_keys` quedó vacío o incompleto.
+3. La llave privada generada no se guardó correctamente.
+4. Quieres regenerar la llave administrada por `hpsr.sh`.
+5. Quieres repetir el flujo de Resend o rehacer el reporte final.
+6. Estás corrigiendo una configuración incompleta sin reinstalar el servidor.
+
+### Qué hace el script cuando lo vuelves a ejecutar
+
+1. Reutiliza el usuario administrativo si ya existe.
+2. Conserva llaves SSH externas o agregadas manualmente.
+3. Reemplaza solo los bloques de llaves previamente gestionados por `hpsr.sh`.
+4. Mantiene una sola llave activa administrada por `hpsr.sh` por usuario.
+5. Intenta reparar el acceso gestionado por el script sin tocar llaves ajenas.
+
+### Cuándo hay que tener más cuidado
+
+Antes de re-ejecutarlo, conviene revisar logs y configuración si:
+
+1. Editaste `sshd_config` manualmente fuera del flujo del script.
+2. Añadiste muchas llaves manuales y no sabes cuáles están activas.
+3. Estás trabajando en contenedores en vez de un VPS o VM real.
+4. El servidor ya tiene una configuración muy personalizada ajena al bootstrap inicial.
+
+## Modo de verificación
+
+`hpsr.sh` incluye un modo de auditoría de solo lectura:
+
+```bash
+bash setup.sh --verify
+```
+
+Este modo revisa, entre otras cosas:
+
+1. Puerto SSH efectivo.
+2. `PermitRootLogin`.
+3. `PasswordAuthentication`.
+4. `PubkeyAuthentication`.
+5. Estado de `authorized_keys`.
+6. Llaves administradas por `hpsr.sh`.
+7. Llaves externas válidas.
+8. Líneas inválidas dentro de `authorized_keys`.
+9. Estado de `ufw`.
+10. Estado de `fail2ban`.
+11. Presencia de `unattended-upgrades`.
+
+El objetivo es reducir la incertidumbre después del setup y facilitar el diagnóstico sin reaplicar cambios.
 
 ## Cómo maneja la seguridad
 
@@ -307,6 +389,7 @@ Si eliges enviar credenciales:
 1. El paquete se comprime y cifra.
 2. La contraseña no se manda por correo.
 3. La contraseña solo se imprime en consola.
+4. Si la entrega falla, conviene no asumir que la privada fue entregada y revisar el estado local antes de cerrar la sesión actual.
 
 ## Preguntas frecuentes
 
@@ -328,11 +411,36 @@ No. `PermitRootLogin` queda en `no`.
 
 ### ¿Se borran archivos sensibles temporales?
 
-Sí. El script limpia automáticamente llaves temporales, archivos intermedios y adjuntos sensibles generados durante la ejecución.
+Sí, pero con una excepción importante: si el script generó una nueva llave privada y el usuario no confirma que ya la guardó correctamente, puede conservarla temporalmente en el servidor para evitar pérdida de acceso.
 
 ### ¿Puedo reutilizarlo muchas veces?
 
-Sí. Está pensado para setups repetitivos de VPS o reinstalaciones rápidas. Aun así, siempre conviene revisar el log y probar una nueva sesión SSH antes de cerrar la sesión actual.
+Sí. Está pensado para setups repetitivos de VPS o reinstalaciones rápidas. En re-ejecuciones conserva llaves externas y reemplaza solo llaves gestionadas por `hpsr.sh`. Aun así, conviene revisar el log y probar una nueva sesión SSH antes de cerrar la sesión actual.
+
+### ¿El script borra mis otras llaves SSH?
+
+No debería. `hpsr.sh` está diseñado para reemplazar únicamente las llaves que él mismo administra y conservar las llaves externas válidas encontradas en `authorized_keys`.
+
+### ¿Qué hago si no puedo entrar por SSH después del setup?
+
+Pasos recomendados:
+
+1. No cierres la sesión actual si todavía tienes acceso local o por consola.
+2. Ejecuta `bash setup.sh --verify` para auditar el estado real.
+3. Revisa `/home/<usuario>/.ssh/authorized_keys`.
+4. Si la llave gestionada no quedó bien o no guardaste la privada, vuelve a ejecutar el script completo.
+5. Prueba una nueva sesión SSH antes de cerrar la anterior.
+
+### ¿Cuándo debo ejecutar de nuevo el script y cuándo usar `--verify`?
+
+Usa `bash setup.sh --verify` cuando quieras comprobar el estado actual sin modificar nada.
+
+Vuelve a ejecutar el script completo cuando:
+
+1. La primera ejecución falló.
+2. `authorized_keys` quedó vacío o inconsistente.
+3. Necesitas regenerar la llave gestionada por `hpsr.sh`.
+4. No guardaste correctamente la llave privada generada.
 
 ## Comunidad y contribuciones
 

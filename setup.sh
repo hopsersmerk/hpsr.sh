@@ -105,11 +105,15 @@ REPORT_NOTE=""
 SENSITIVE_PATHS=()
 REPORT_WRITTEN="no"
 UI_LANG="es"
+LANG_EXPLICIT="no"
 HPSR_MANAGED_KEY_REPLACED_COUNT="0"
 HPSR_EXTERNAL_KEY_COUNT="0"
 HPSR_MANAGED_KEY_INSTALLED="no"
 PRIVATE_KEY_SAVE_CONFIRMED="no"
 KEEP_PRIVATE_KEY_AFTER_RUN="no"
+HPSR_INVALID_AUTHORIZED_KEYS_LINES="0"
+RUN_MODE="setup"
+VERIFY_RESULT="READY"
 
 BASE_PACKAGES=(curl git openssl nano telnet glances)
 INSTALLER_DEPENDENCIES=(curl openssl openssh-client openssh-server ca-certificates ufw zip)
@@ -328,6 +332,36 @@ msg() {
     en:private_key_kept) printf 'Temporary private key will remain on the server until you save it correctly' ;;
     es:private_key_removed) printf 'La llave privada temporal sera eliminada al terminar esta ejecucion' ;;
     en:private_key_removed) printf 'Temporary private key will be removed at the end of this run' ;;
+    es:invalid_authorized_keys_lines) printf 'Lineas invalidas eliminadas de authorized_keys' ;;
+    en:invalid_authorized_keys_lines) printf 'Invalid lines removed from authorized_keys' ;;
+    es:verify_section) printf 'VERIFICACION [solo lectura]' ;;
+    en:verify_section) printf 'VERIFY [read-only]' ;;
+    es:verify_result) printf 'Resultado final' ;;
+    en:verify_result) printf 'Final result' ;;
+    es:verify_ready) printf 'READY' ;;
+    en:verify_ready) printf 'READY' ;;
+    es:verify_warning) printf 'WARNING' ;;
+    en:verify_warning) printf 'WARNING' ;;
+    es:verify_fail) printf 'FAIL' ;;
+    en:verify_fail) printf 'FAIL' ;;
+    es:effective_ssh) printf 'Estado efectivo de SSH' ;;
+    en:effective_ssh) printf 'Effective SSH status' ;;
+    es:listening_port) printf 'Puerto en escucha' ;;
+    en:listening_port) printf 'Listening port' ;;
+    es:authorized_keys_status) printf 'Estado de authorized_keys' ;;
+    en:authorized_keys_status) printf 'authorized_keys status' ;;
+    es:managed_key_blocks) printf 'Bloques hpsr.sh detectados' ;;
+    en:managed_key_blocks) printf 'hpsr.sh managed blocks' ;;
+    es:external_valid_keys) printf 'Llaves externas validas' ;;
+    en:external_valid_keys) printf 'Valid external keys' ;;
+    es:invalid_lines) printf 'Lineas invalidas' ;;
+    en:invalid_lines) printf 'Invalid lines' ;;
+    es:detected_admin_user) printf 'Usuario admin detectado' ;;
+    en:detected_admin_user) printf 'Detected admin user' ;;
+    es:verify_hint_fix) printf 'Si falta acceso SSH, vuelve a ejecutar el script completo para reparar la llave gestionada por hpsr.sh.' ;;
+    en:verify_hint_fix) printf 'If SSH access is missing, rerun the full script to repair the hpsr.sh managed key.' ;;
+    es:usage) printf 'Uso: bash setup.sh [--verify] [--lang es|en]' ;;
+    en:usage) printf 'Usage: bash setup.sh [--verify] [--lang es|en]' ;;
     *) printf '%s' "$key" ;;
   esac
 }
@@ -359,6 +393,47 @@ unregister_sensitive_path() {
   SENSITIVE_PATHS=("${kept[@]}")
 }
 
+set_verify_result() {
+  local level="$1"
+  case "$level" in
+    FAIL)
+      VERIFY_RESULT="FAIL"
+      ;;
+    WARNING)
+      [[ "$VERIFY_RESULT" == "FAIL" ]] || VERIFY_RESULT="WARNING"
+      ;;
+    *) ;;
+  esac
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --verify)
+        RUN_MODE="verify"
+        ;;
+      --lang)
+        shift
+        [[ $# -gt 0 ]] || die "$(msg usage)"
+      if [[ "$1" == "en" || "$1" == "es" ]]; then
+        UI_LANG="$1"
+        LANG_EXPLICIT="yes"
+      else
+        die "$(msg usage)"
+      fi
+        ;;
+      --help|-h)
+        printf '%s\n' "$(msg usage)"
+        exit 0
+        ;;
+      *)
+        die "$(msg usage)"
+        ;;
+    esac
+    shift
+  done
+}
+
 cleanup_sensitive_artifacts() {
   local path
   local deleted_any="no"
@@ -379,6 +454,7 @@ cleanup_sensitive_artifacts() {
 }
 
 on_exit() {
+  [[ "$RUN_MODE" == "verify" ]] && return 0
   cleanup_sensitive_artifacts
   if [[ "$REPORT_WRITTEN" == "no" && -n "$REPORT_FILE" ]]; then
     write_report >/dev/null 2>&1 || true
@@ -973,6 +1049,24 @@ count_non_managed_keys() {
     managed {next}
     /^[[:space:]]*$/ {next}
     /^#/ {next}
+    /^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh.com|sk-ecdsa-sha2-nistp256@openssh.com)[[:space:]]+[A-Za-z0-9+/=]+([[:space:]].*)?$/ {count++}
+    END {print count+0}
+  ' "$auth_file"
+}
+
+count_invalid_authorized_keys_lines() {
+  local auth_file="$1"
+  [[ -f "$auth_file" ]] || {
+    printf '0'
+    return 0
+  }
+  awk '
+    /^# BEGIN hpsr\.sh managed key$/ {managed=1; next}
+    /^# END hpsr\.sh managed key$/ {managed=0; next}
+    managed {next}
+    /^[[:space:]]*$/ {next}
+    /^#/ {next}
+    /^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh.com|sk-ecdsa-sha2-nistp256@openssh.com)[[:space:]]+[A-Za-z0-9+/=]+([[:space:]].*)?$/ {next}
     {count++}
     END {print count+0}
   ' "$auth_file"
@@ -994,18 +1088,30 @@ remove_managed_keys_from_authorized_keys() {
   if [[ ! -f "$auth_file" ]]; then
     HPSR_MANAGED_KEY_REPLACED_COUNT="0"
     HPSR_EXTERNAL_KEY_COUNT="0"
+    HPSR_INVALID_AUTHORIZED_KEYS_LINES="0"
     return 0
   fi
   HPSR_MANAGED_KEY_REPLACED_COUNT="$(count_managed_key_blocks "$auth_file")"
   HPSR_EXTERNAL_KEY_COUNT="$(count_non_managed_keys "$auth_file")"
+  HPSR_INVALID_AUTHORIZED_KEYS_LINES="$(count_invalid_authorized_keys_lines "$auth_file")"
   awk '
     /^# BEGIN hpsr\.sh managed key$/ {managed=1; next}
     /^# END hpsr\.sh managed key$/ {managed=0; next}
-    !managed {print}
+    managed {next}
+    /^[[:space:]]*$/ {next}
+    /^#/ {print; next}
+    /^(ssh-(ed25519|rsa)|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh.com|sk-ecdsa-sha2-nistp256@openssh.com)[[:space:]]+[A-Za-z0-9+/=]+([[:space:]].*)?$/ {print; next}
   ' "$auth_file" > "$temp_file" || return 1
   mv "$temp_file" "$auth_file" || return 1
   unregister_sensitive_path "$temp_file"
   return 0
+}
+
+authorized_keys_contains_key_base() {
+  local auth_file="$1"
+  local key_base="$2"
+  [[ -f "$auth_file" ]] || return 1
+  awk '/^ssh-|^ecdsa-sha2-|^sk-/{print $1" "$2}' "$auth_file" | grep -Fqx "$key_base"
 }
 
 verify_generated_key_installation() {
@@ -1018,7 +1124,7 @@ verify_generated_key_installation() {
   SSH_DERIVED_PUBLIC_KEY_BASE="$(ssh_public_key_base "$derived_line")"
   SSH_KEY_FINGERPRINT="$(ssh-keygen -lf "$SSH_PRIVATE_KEY_PATH" 2>>"$LOG_FILE" | awk '{print $2}' || true)"
   [[ -n "$SSH_DERIVED_PUBLIC_KEY_BASE" ]] || return 1
-  grep -Fqx "$SSH_DERIVED_PUBLIC_KEY_BASE" "$auth_file" 2>/dev/null
+  authorized_keys_contains_key_base "$auth_file" "$SSH_DERIVED_PUBLIC_KEY_BASE"
 }
 
 validate_public_key() {
@@ -1048,6 +1154,167 @@ service_action() {
     run_cmd service "$service_name" "$action" && return 0
   fi
   return 1
+}
+
+service_is_active() {
+  local service_name="$1"
+  if command_exists systemctl && systemctl list-unit-files >/dev/null 2>&1; then
+    systemctl is-active --quiet "$service_name" >> "$LOG_FILE" 2>&1
+    return $?
+  fi
+  if command_exists service; then
+    service "$service_name" status >> "$LOG_FILE" 2>&1
+    return $?
+  fi
+  return 1
+}
+
+detect_admin_user_for_verify() {
+  local sudo_members=""
+  sudo_members="$(getent group sudo 2>/dev/null | cut -d: -f4 || true)"
+  if [[ -n "$sudo_members" ]]; then
+    ADMIN_USER="${sudo_members%%,*}"
+  fi
+}
+
+verify_setup() {
+  local ssh_config_dump=""
+  local port_effective=""
+  local permit_root_login=""
+  local password_auth=""
+  local pubkey_auth=""
+  local auth_file=""
+  local auth_mode_text=""
+  local managed_blocks="0"
+  local external_keys="0"
+  local invalid_lines="0"
+  local auth_perms="missing"
+  local ufw_status=""
+
+  require_root
+  init_workspace
+  detect_os
+  detect_hostname
+  detect_timezone
+  detect_ssh_port
+  detect_public_ip
+  detect_container
+  detect_ssh_service_name
+  detect_admin_user_for_verify
+
+  section "$(msg verify_section)"
+  subsection "$(msg system_snapshot)"
+  key_value "$(msg hostname)" "$CURRENT_HOSTNAME"
+  key_value "$(msg timezone)" "$CURRENT_TIMEZONE"
+  key_value "$(msg ssh_port)" "$CURRENT_SSH_PORT"
+  if [[ -n "$PUBLIC_IP" ]]; then
+    key_value "$(msg public_ip)" "$PUBLIC_IP"
+  fi
+
+  ssh_config_dump="$(sshd -T 2>>"$LOG_FILE" || true)"
+  if [[ -z "$ssh_config_dump" ]]; then
+    print_fail "Unable to read effective sshd configuration"
+    set_verify_result FAIL
+  else
+    port_effective="$(printf '%s\n' "$ssh_config_dump" | awk '$1=="port"{print $2; exit}')"
+    permit_root_login="$(printf '%s\n' "$ssh_config_dump" | awk '$1=="permitrootlogin"{print $2; exit}')"
+    password_auth="$(printf '%s\n' "$ssh_config_dump" | awk '$1=="passwordauthentication"{print $2; exit}')"
+    pubkey_auth="$(printf '%s\n' "$ssh_config_dump" | awk '$1=="pubkeyauthentication"{print $2; exit}')"
+  fi
+
+  subsection "$(msg effective_ssh)"
+  key_value "$(msg ssh_port)" "${port_effective:-unknown}"
+  key_value "PermitRootLogin" "${permit_root_login:-unknown}"
+  key_value "PasswordAuthentication" "${password_auth:-unknown}"
+  key_value "PubkeyAuthentication" "${pubkey_auth:-unknown}"
+
+  if [[ -n "$port_effective" ]] && ss -tln 2>>"$LOG_FILE" | awk '{print $4}' | grep -Eq "(^|[.:])${port_effective}$"; then
+    print_ok "$(msg listening_port): $port_effective"
+  else
+    print_fail "$(msg listening_port): ${port_effective:-unknown}"
+    set_verify_result FAIL
+  fi
+
+  [[ "$permit_root_login" == "no" ]] || set_verify_result FAIL
+  [[ "$password_auth" == "no" ]] || set_verify_result FAIL
+  [[ "$pubkey_auth" == "yes" ]] || set_verify_result FAIL
+
+  subsection "$(lang_is_en && printf 'Administrative user' || printf 'Usuario administrativo')"
+  if [[ -n "$ADMIN_USER" ]] && id "$ADMIN_USER" >/dev/null 2>&1; then
+    key_value "$(msg detected_admin_user)" "$ADMIN_USER"
+    auth_file="/home/$ADMIN_USER/.ssh/authorized_keys"
+  else
+    key_value "$(msg detected_admin_user)" "not-found"
+    set_verify_result WARNING
+  fi
+
+  subsection "$(msg authorized_keys_status)"
+  if [[ -n "$auth_file" && -f "$auth_file" ]]; then
+    managed_blocks="$(count_managed_key_blocks "$auth_file")"
+    external_keys="$(count_non_managed_keys "$auth_file")"
+    invalid_lines="$(count_invalid_authorized_keys_lines "$auth_file")"
+    auth_perms="$(stat -c '%a' "$auth_file" 2>>"$LOG_FILE" || printf 'unknown')"
+    key_value "$(msg managed_key_blocks)" "$managed_blocks"
+    key_value "$(msg external_valid_keys)" "$external_keys"
+    key_value "$(msg invalid_lines)" "$invalid_lines"
+    key_value "Permissions" "$auth_perms"
+    if (( managed_blocks + external_keys == 0 )); then
+      print_fail "No valid SSH keys found in authorized_keys"
+      set_verify_result FAIL
+    fi
+    if [[ "$invalid_lines" != "0" ]]; then
+      print_warn "$(msg invalid_authorized_keys_lines): $invalid_lines"
+      set_verify_result WARNING
+    fi
+    if [[ "$auth_perms" != "600" ]]; then
+      print_warn "authorized_keys permissions should be 600"
+      set_verify_result WARNING
+    fi
+  else
+    print_fail "authorized_keys not found for ${ADMIN_USER:-unknown-user}"
+    set_verify_result FAIL
+  fi
+
+  subsection "Firewall"
+  if command_exists ufw; then
+    ufw_status="$(ufw status 2>>"$LOG_FILE" || true)"
+    if printf '%s\n' "$ufw_status" | grep -q '^Status: active'; then
+      print_ok "UFW active"
+      if [[ -n "$port_effective" ]] && printf '%s\n' "$ufw_status" | grep -Fq "$port_effective/tcp"; then
+        print_ok "UFW rule present for SSH port $port_effective"
+      else
+        print_warn "UFW rule for SSH port ${port_effective:-unknown} was not found"
+        set_verify_result WARNING
+      fi
+    else
+      print_warn "UFW is not active"
+      set_verify_result WARNING
+    fi
+  else
+    print_warn "UFW is not installed"
+    set_verify_result WARNING
+  fi
+
+  subsection "Services"
+  if service_is_active fail2ban; then
+    print_ok "Fail2ban active"
+  else
+    print_warn "Fail2ban inactive"
+    set_verify_result WARNING
+  fi
+
+  if dpkg -s unattended-upgrades >/dev/null 2>&1; then
+    print_ok "unattended-upgrades installed"
+  else
+    print_warn "unattended-upgrades not installed"
+    set_verify_result WARNING
+  fi
+
+  subsection "$(msg verify_result)"
+  key_value "$(msg verify_result)" "$(msg verify_${VERIFY_RESULT,,})"
+  if [[ "$VERIFY_RESULT" != "READY" ]]; then
+    print_warn "$(msg verify_hint_fix)"
+  fi
 }
 
 prepare_sshd_runtime() {
@@ -1136,6 +1403,9 @@ install_public_key_for_user() {
   chmod 600 "$auth_file"
   chown "$ADMIN_USER:$ADMIN_USER" "$auth_file"
   remove_managed_keys_from_authorized_keys "$auth_file" || die "Failed to rotate managed SSH keys in authorized_keys"
+  if [[ "$HPSR_INVALID_AUTHORIZED_KEYS_LINES" != "0" ]]; then
+    print_warn "$(msg invalid_authorized_keys_lines): $HPSR_INVALID_AUTHORIZED_KEYS_LINES"
+  fi
   printf '# BEGIN hpsr.sh managed key\n' >> "$auth_file"
   printf '%s\n' "$SSH_PUBLIC_KEY_CONTENT" >> "$auth_file"
   printf '# END hpsr.sh managed key\n' >> "$auth_file"
@@ -1771,9 +2041,19 @@ apply_all_changes() {
 }
 
 main() {
+  parse_args "$@"
   trap on_exit EXIT
+  if [[ "$RUN_MODE" == "verify" ]]; then
+    print_banner
+    printf '\n'
+    verify_setup
+    return 0
+  fi
+
   init_tty
-  select_language
+  if [[ "$LANG_EXPLICIT" != "yes" ]]; then
+    select_language
+  fi
   print_banner
   printf '\n'
   print_bold "$(msg intro_title)"
