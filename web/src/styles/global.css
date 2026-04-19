@@ -422,6 +422,8 @@ code, pre {
   border: 1px solid var(--border-strong);
   color: var(--text);
   margin-bottom: 2rem;
+  max-width: min(100%, 36rem);
+  justify-content: center;
 }
 
 @media only screen and (max-width: 767px) {
@@ -497,6 +499,7 @@ code, pre {
   font-size: 1.3rem;
   color: var(--text);
   text-align: center;
+  width: 100%;
 }
 
 @media only screen and (min-width: 1200px) {
@@ -544,6 +547,7 @@ code, pre {
   display: flex;
   justify-content: center;
   align-items: center;
+   flex-wrap: wrap;
   gap: 12px;
   margin-top: 2rem;
 }
@@ -559,11 +563,30 @@ code, pre {
   transition: color var(--_animspeed-medium) var(--_animbezier);
 }
 
+.hero-link-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 4rem;
+  padding: 0 1.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(var(--bg-rgb), 0.4);
+  transition: color var(--_animspeed-medium) var(--_animbezier),
+              background-color var(--_animspeed-medium) var(--_animbezier),
+              border-color var(--_animspeed-medium) var(--_animbezier);
+}
+
 @media only screen and (min-width: 1200px) {
   .hero-link { font-size: 1.6rem; }
 }
 
 .hero-link:hover { color: var(--text); }
+
+.hero-link-pill:hover {
+  background: var(--panel);
+  border-color: var(--border-strong);
+}
 
 .hero-separator {
   color: var(--muted);
@@ -1021,14 +1044,100 @@ code, pre {
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 767px) {
+  .section {
+    padding: 5.4rem 0;
+  }
+
+  .hero {
+    padding-top: 9.6rem;
+    padding-bottom: 3.6rem;
+  }
+
+  .hero-layout {
+    max-width: 36rem;
+  }
+
+  .eyebrow {
+    min-height: 0;
+    padding: 1rem 1.6rem;
+    font-size: 1.15rem;
+    line-height: 1.45;
+    letter-spacing: 0.035em;
+    margin-bottom: 1.6rem;
+  }
+
+  .hero-title {
+    margin-top: 1.4rem;
+    font-size: clamp(2.9rem, 8.5vw, 4.6rem);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+  }
+
+  .hero-description {
+    max-width: 31rem;
+    margin-top: 1.6rem;
+    font-size: 1.55rem;
+    line-height: 1.7;
+  }
+
+  .hero-command-wrap {
+    max-width: 100%;
+    margin-top: 2.4rem;
+  }
+
   .command-box {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+    padding: 1.2rem;
+    border-radius: 2.2rem;
+  }
+
+  .command-box-code {
+    text-align: left;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .copy-button {
     width: 100%;
     justify-content: center;
+    min-height: 4rem;
+    font-size: 1.25rem;
+  }
+
+  .command-hint {
+    margin-top: 1rem;
+    font-size: 1.35rem;
+    line-height: 1.6;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 1.6rem;
+  }
+
+  .hero-link-pill {
+    width: 100%;
+    min-height: 4.2rem;
+  }
+
+  .hero-note {
+    max-width: 32rem;
+    margin-top: 1.2rem;
+    font-size: 1.35rem;
+    line-height: 1.7;
+  }
+
+  .split-section {
+    gap: 2.4rem;
+  }
+
+  .detail-grid {
+    gap: 10px;
   }
 
   .feature-card {
@@ -1037,6 +1146,5 @@ code, pre {
   }
 
   .terminal-content,
-  .command-box-code,
   .footer-command { font-size: 1.1rem; }
 }
