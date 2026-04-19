@@ -5,7 +5,7 @@ import '../styles/global.css'
 
 const githubUrl = 'https://github.com/hopsersmerk/hpsr.sh'
 const siteUrl = 'https://hpsr.sh'
-const ogImageUrl = `${siteUrl}/og-image.svg`
+const ogImageUrl = `${siteUrl}/og-image.png`
 const serializedContent = JSON.stringify(content)
 const serializedTerminal = JSON.stringify(terminalLines)
 const structuredData = JSON.stringify([
@@ -64,7 +64,7 @@ const structuredData = JSON.stringify([
     <meta property="og:image" content={ogImageUrl} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:type" content="image/png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={content.es.meta.title} />
     <meta name="twitter:description" content={content.es.meta.description} />
