@@ -1,0 +1,30 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="60" x2="1080" y2="570" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17171b"/>
+      <stop offset="1" stop-color="#0f1013"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(860 110) rotate(135) scale(460 280)">
+      <stop stop-color="#F2DFFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#F2DFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" rx="32" fill="url(#bg)"/>
+  <rect width="1200" height="630" rx="32" fill="url(#glow)"/>
+  <rect x="70" y="70" width="1060" height="490" rx="28" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.09)"/>
+  <circle cx="128" cy="128" r="7" fill="#FF5F57"/>
+  <circle cx="151" cy="128" r="7" fill="#FEBC2E"/>
+  <circle cx="174" cy="128" r="7" fill="#28C840"/>
+  <text x="110" y="210" fill="#F2F5FC" font-family="Urbanist, Arial, sans-serif" font-size="82" font-weight="700" letter-spacing="-3">hpsr<tspan fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="74">.sh</tspan></text>
+  <text x="110" y="268" fill="#AEB5C5" font-family="Urbanist, Arial, sans-serif" font-size="30" font-weight="500">Setup inicial y hardening para Debian y Ubuntu</text>
+  <text x="110" y="330" fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="24">curl -fsSL https://hpsr.sh/setup.sh | bash</text>
+  <rect x="110" y="370" width="620" height="130" rx="18" fill="#141418" stroke="rgba(242,223,255,0.16)"/>
+  <text x="140" y="418" fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="20">&gt; VERIFICACIONES [1/9]</text>
+  <text x="140" y="454" fill="#78DCA0" font-family="IBM Plex Mono, monospace" font-size="18">[ OK ]</text>
+  <text x="214" y="454" fill="#F2F5FC" font-family="IBM Plex Mono, monospace" font-size="18">Running as root</text>
+  <text x="140" y="486" fill="#78DCA0" font-family="IBM Plex Mono, monospace" font-size="18">[ OK ]</text>
+  <text x="214" y="486" fill="#F2F5FC" font-family="IBM Plex Mono, monospace" font-size="18">UFW, Fail2ban y updates automáticos</text>
+  <text x="844" y="514" fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="18">hpsr.mx</text>
+  <text x="944" y="514" fill="#505258" font-family="IBM Plex Mono, monospace" font-size="18">|</text>
+  <text x="962" y="514" fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="18">hopsersmerk.com</text>
+</svg>

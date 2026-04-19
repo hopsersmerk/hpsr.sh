@@ -1,0 +1,17 @@
+{
+  "name": "hpsr-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.2",
+    "ansi_up": "^6.0.6",
+    "astro": "^5.7.0"
+  }
+}

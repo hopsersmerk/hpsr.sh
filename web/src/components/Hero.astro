@@ -1,0 +1,25 @@
+---
+import { content } from '../lib/content'
+import CopyCommand from './CopyCommand.astro'
+---
+
+<section class="hero section animate-in" id="top">
+  <div class="container hero-layout">
+    <p class="eyebrow" data-i18n="hero.eyebrow">{content.es.hero.eyebrow}</p>
+    <h1 class="hero-title" data-i18n="hero.title">{content.es.hero.title}</h1>
+    <p class="hero-description" data-i18n="hero.description">{content.es.hero.description}</p>
+
+    <div class="hero-command-wrap">
+      <CopyCommand />
+      <p class="command-hint" data-i18n="hero.commandHint">{content.es.hero.commandHint}</p>
+    </div>
+
+    <div class="hero-actions">
+      <a class="hero-link" href="/setup.sh" data-i18n="hero.secondary">{content.es.hero.secondary}</a>
+      <span class="hero-separator">/</span>
+      <a class="hero-link" data-github-link href="https://github.com/hopsersmerk/hpsr.sh" data-i18n="hero.primary">{content.es.hero.primary}</a>
+    </div>
+
+    <p class="hero-note" data-i18n="hero.note">{content.es.hero.note}</p>
+  </div>
+</section>

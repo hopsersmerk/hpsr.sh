@@ -30,6 +30,18 @@ No intenta reemplazar herramientas más grandes como Ansible, Terraform o sistem
 3. Rápido de ejecutar.
 4. Suficientemente técnico para un entorno real básico.
 
+## Landing oficial
+
+La landing pública del proyecto vive en:
+
+`https://hpsr.sh`
+
+Ahí puedes:
+
+1. Ver el comando de uso rápido.
+2. Revisar el flujo del asistente con una vista previa de terminal.
+3. Ir directo al script o al repositorio.
+
 ## Casos de uso
 
 `hpsr.sh` encaja especialmente bien en estos escenarios:
@@ -241,13 +253,13 @@ También puede ejecutarse en contenedores para pruebas parciales, pero hay limit
 ### Opción 1: ejecutar directamente
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hopsersmerk/hpsr.sh/main/setup.sh | bash
+curl -fsSL https://hpsr.sh/setup.sh | bash
 ```
 
 ### Opción 2: descargar y ejecutar
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hopsersmerk/hpsr.sh/main/setup.sh -o setup.sh
+curl -fsSL https://hpsr.sh/setup.sh -o setup.sh
 bash setup.sh
 ```
 

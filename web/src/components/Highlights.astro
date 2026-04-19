@@ -1,0 +1,43 @@
+---
+import { content, installCommand } from '../lib/content'
+---
+
+<section class="section animate-in" id="capabilities">
+  <div class="container split-section">
+    <div class="split-copy">
+      <span class="section-kicker">hpsr.sh</span>
+      <h2 data-i18n="highlights.title">{content.es.highlights.title}</h2>
+      <p>
+        El valor no está en hacer más cosas. Está en resolver las necesarias con una base más clara, más segura y más repetible.
+      </p>
+
+      <div class="inline-command">
+        <code>{installCommand}</code>
+      </div>
+    </div>
+
+    <div class="feature-stack">
+      {content.es.highlights.items.map((item, index) => (
+        <article class="feature-card">
+          <span class="feature-index">0{index + 1}</span>
+          <div>
+            <h3 data-i18n={`highlights.items.${index}.title`}>{item.title}</h3>
+            <p data-i18n={`highlights.items.${index}.description`}>{item.description}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="section animate-in" style="padding-top: 0;">
+  <div class="container detail-grid">
+    {content.es.overview.items.map((item, index) => (
+      <article class="detail-card">
+        <span class="detail-index">0{index + 1}</span>
+        <h3 data-i18n={`overview.items.${index}.title`}>{item.title}</h3>
+        <p data-i18n={`overview.items.${index}.description`}>{item.description}</p>
+      </article>
+    ))}
+  </div>
+</section>

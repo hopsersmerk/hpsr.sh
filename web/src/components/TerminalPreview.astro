@@ -1,0 +1,175 @@
+---
+import { content } from '../lib/content'
+import { terminalLines } from '../lib/terminal'
+
+const serializedTerminal = JSON.stringify(terminalLines)
+---
+
+<section class="section" id="flow">
+  <div class="container split-section split-section-terminal">
+    <div class="split-copy">
+      <span class="terminal-badge" data-i18n="terminal.badge">{content.es.terminal.badge}</span>
+      <h2 data-i18n="terminal.title">{content.es.terminal.title}</h2>
+      <p data-i18n="terminal.description">{content.es.terminal.description}</p>
+    </div>
+
+    <div class="terminal-shell">
+      <div class="terminal-topbar">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <div class="terminal-content terminal-content-live" data-terminal-content data-terminal-lines={serializedTerminal}></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const terminalState = {
+    scroller: null,
+    root: null,
+    nodes: {},
+  }
+
+  const getTerminalData = () => {
+    const root = document.querySelector('[data-terminal-content]')
+    if (!root) return { root: null, data: null }
+
+    try {
+      return {
+        root,
+        data: JSON.parse(root.getAttribute('data-terminal-lines') || '{}'),
+      }
+    } catch {
+      return { root, data: null }
+    }
+  }
+
+  const clearScroller = () => {
+    if (terminalState.scroller) {
+      window.cancelAnimationFrame(terminalState.scroller)
+      terminalState.scroller = null
+    }
+  }
+
+  const buildRows = (lines) => {
+    const fragment = document.createDocumentFragment()
+
+    lines.forEach((line) => {
+      const row = document.createElement('div')
+      row.className = line === '' ? 'terminal-row terminal-row-empty' : 'terminal-row'
+
+      if (line === '') {
+        row.innerHTML = '&nbsp;'
+        fragment.appendChild(row)
+        return
+      }
+
+      if (/^────────────────/.test(line) || /^> /.test(line) || /^[╔╚]/.test(line) || /^║/.test(line)) {
+        row.classList.add('terminal-row-accent')
+      }
+
+      if (/^\[ OK \]/.test(line)) {
+        row.classList.add('terminal-row-status')
+        const badge = document.createElement('span')
+        badge.className = 'terminal-token terminal-token-ok'
+        badge.textContent = '[ OK ]'
+        row.appendChild(badge)
+        row.append(document.createTextNode(line.slice(6)))
+        fragment.appendChild(row)
+        return
+      }
+
+      if (/^\[WARN\]/.test(line)) {
+        row.classList.add('terminal-row-status')
+        const badge = document.createElement('span')
+        badge.className = 'terminal-token terminal-token-warn'
+        badge.textContent = '[WARN]'
+        row.appendChild(badge)
+        row.append(document.createTextNode(line.slice(6)))
+        fragment.appendChild(row)
+        return
+      }
+
+      if (/^(Importante:|Important:)$/.test(line)) {
+        row.classList.add('terminal-row-warn')
+      }
+
+      if (/^(  Accent\s+|  Sugerido\s+|  Suggested\s+|  Puerto\s+|  Port\s+|  SSH\s+666\/tcp|Contrasena del archivo:|Archive password:)/.test(line)) {
+        row.classList.add('terminal-row-highlight')
+      }
+
+      row.textContent = line
+      fragment.appendChild(row)
+    })
+
+    return fragment
+  }
+
+  const startAutoScroll = (root) => {
+    clearScroller()
+
+    let last = performance.now()
+    let pauseUntil = performance.now() + 900
+    const speed = 18
+
+    const step = (now) => {
+      if (!root.isConnected) return
+
+      const maxScroll = root.scrollHeight - root.clientHeight
+      if (maxScroll <= 0) return
+
+      const delta = (now - last) / 1000
+      last = now
+
+      if (now >= pauseUntil) {
+        root.scrollTop = Math.min(maxScroll, root.scrollTop + speed * delta)
+      }
+
+      if (root.scrollTop >= maxScroll - 2) {
+        pauseUntil = now + 1200
+        root.scrollTop = 0
+      }
+
+      terminalState.scroller = window.requestAnimationFrame(step)
+    }
+
+    terminalState.scroller = window.requestAnimationFrame(step)
+  }
+
+  const renderTerminal = (lang = 'es') => {
+    const { data } = getTerminalData()
+    if (!terminalState.root || !data) return
+
+    const safeLang = data[lang] ? lang : 'es'
+    if (!terminalState.nodes[safeLang]) {
+      terminalState.nodes[safeLang] = buildRows(data[safeLang] || [])
+    }
+
+    clearScroller()
+    terminalState.root.replaceChildren(terminalState.nodes[safeLang].cloneNode(true))
+    terminalState.root.scrollTop = 0
+    startAutoScroll(terminalState.root)
+  }
+
+  const mountTerminal = () => {
+    const { root } = getTerminalData()
+    if (!root) return
+
+    if (!terminalState.root) {
+      terminalState.root = root
+      window.__hpsrRenderTerminal = renderTerminal
+
+      root.addEventListener('mouseenter', clearScroller)
+      root.addEventListener('mouseleave', () => startAutoScroll(root))
+    }
+
+    renderTerminal(document.documentElement.lang || 'es')
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountTerminal, { once: true })
+  } else {
+    mountTerminal()
+  }
+</script>

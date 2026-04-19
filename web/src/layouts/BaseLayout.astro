@@ -1,0 +1,279 @@
+---
+import { content } from '../lib/content'
+import { terminalLines } from '../lib/terminal'
+import '../styles/global.css'
+
+const githubUrl = 'https://github.com/hopsersmerk/hpsr.sh'
+const siteUrl = 'https://hpsr.sh'
+const ogImageUrl = `${siteUrl}/og-image.svg`
+const serializedContent = JSON.stringify(content)
+const serializedTerminal = JSON.stringify(terminalLines)
+const structuredData = JSON.stringify([
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'hpsr.sh',
+    url: siteUrl,
+    inLanguage: ['es', 'en'],
+    description: content.es.meta.description
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'hpsr.sh',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Debian, Ubuntu, Linux',
+    softwareVersion: '0.2.0',
+    url: siteUrl,
+    downloadUrl: `${siteUrl}/setup.sh`,
+    image: ogImageUrl,
+    description: content.es.meta.description,
+    author: {
+      '@type': 'Organization',
+      name: 'hpsr.sh',
+      url: siteUrl
+    }
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'hpsr.sh',
+    url: siteUrl,
+    logo: `${siteUrl}/logo.png`,
+    sameAs: ['https://github.com/hopsersmerk/hpsr.sh', 'https://hopsersmerk.com', 'https://hpsr.mx']
+  }
+])
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{content.es.meta.title}</title>
+    <meta name="description" content={content.es.meta.description} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="application-name" content="hpsr.sh" />
+    <meta name="theme-color" content="#BABEC8" />
+    <meta property="og:site_name" content="hpsr.sh" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:title" content={content.es.meta.title} />
+    <meta property="og:description" content={content.es.meta.description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={content.es.meta.title} />
+    <meta name="twitter:description" content={content.es.meta.description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <link rel="canonical" href={siteUrl} />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <script defer src="https://analytics.hopsersmerk.dev/script.js" data-website-id="bd4f5ca2-af22-456c-a0c7-b79172759041"></script>
+    <script type="application/ld+json" set:html={structuredData}></script>
+    <script is:inline>
+      ;(function() {
+        var stored = localStorage.getItem('hpsr-theme')
+        var scheme = stored ? stored : 'light'
+        document.documentElement.setAttribute('color-scheme', scheme)
+        if (scheme === 'dark') {
+          document.documentElement.classList.add('color-scheme-dark')
+          document.documentElement.classList.remove('color-scheme-light')
+        } else {
+          document.documentElement.classList.add('color-scheme-light')
+          document.documentElement.classList.remove('color-scheme-dark')
+        }
+        var metaTheme = document.querySelector('meta[name="theme-color"]')
+        if (metaTheme) {
+          metaTheme.setAttribute('content', scheme === 'dark' ? '#141414' : '#BABEC8')
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="page-glow page-glow-a"></div>
+      <slot />
+    </div>
+    <script is:inline define:vars={{ serializedContent, serializedTerminal, githubUrl }}>
+      const CONTENT = JSON.parse(serializedContent)
+      const TERMINAL = JSON.parse(serializedTerminal)
+      const STORAGE_KEY = 'hpsr-site-language'
+      const THEME_KEY = 'hpsr-theme'
+      const defaultLang = 'es'
+
+      const pathGet = (object, path) => {
+        return path.split('.').reduce((acc, part) => {
+          if (acc == null) return undefined
+          if (/^\d+$/.test(part)) return acc[Number(part)]
+          return acc[part]
+        }, object)
+      }
+
+      const detectLanguage = () => {
+        const stored = window.localStorage.getItem(STORAGE_KEY)
+        if (stored === 'es' || stored === 'en') return stored
+
+        const languages = navigator.languages && navigator.languages.length > 0
+          ? navigator.languages
+          : [navigator.language || defaultLang]
+
+        return languages.some((value) => String(value).toLowerCase().startsWith('es')) ? 'es' : 'en'
+      }
+
+      const setMeta = (lang) => {
+        document.documentElement.lang = lang
+        document.title = CONTENT[lang].meta.title
+
+        const description = document.querySelector('meta[name="description"]')
+        const ogTitle = document.querySelector('meta[property="og:title"]')
+        const ogDescription = document.querySelector('meta[property="og:description"]')
+        const twitterTitle = document.querySelector('meta[name="twitter:title"]')
+        const twitterDescription = document.querySelector('meta[name="twitter:description"]')
+        const ogLocale = document.querySelector('meta[property="og:locale"]')
+
+        if (description) description.setAttribute('content', CONTENT[lang].meta.description)
+        if (ogTitle) ogTitle.setAttribute('content', CONTENT[lang].meta.title)
+        if (ogDescription) ogDescription.setAttribute('content', CONTENT[lang].meta.description)
+        if (twitterTitle) twitterTitle.setAttribute('content', CONTENT[lang].meta.title)
+        if (twitterDescription) twitterDescription.setAttribute('content', CONTENT[lang].meta.description)
+        if (ogLocale) ogLocale.setAttribute('content', lang === 'en' ? 'en_US' : 'es_MX')
+      }
+
+      const renderTerminal = (lang) => {
+        if (typeof window.__hpsrRenderTerminal === 'function') {
+          window.__hpsrRenderTerminal(lang)
+          return
+        }
+
+        const terminalContent = document.querySelector('[data-terminal-content]')
+        if (!terminalContent) return
+
+        terminalContent.innerHTML = ''
+
+        TERMINAL[lang].forEach((line, index) => {
+          const row = document.createElement('div')
+          row.className = line === '' ? 'terminal-line terminal-line-empty' : 'terminal-line'
+          row.textContent = line || ' '
+          row.style.animationDelay = `${index * 45}ms`
+          terminalContent.appendChild(row)
+        })
+      }
+
+      const applyLanguage = (lang, persist = false) => {
+        const safeLang = lang === 'en' ? 'en' : 'es'
+        const dictionary = CONTENT[safeLang]
+
+        document.querySelectorAll('[data-i18n]').forEach((node) => {
+          const key = node.getAttribute('data-i18n')
+          const value = pathGet(dictionary, key)
+          if (typeof value === 'string') {
+            node.textContent = value
+          }
+        })
+
+        document.querySelectorAll('[data-language-button]').forEach((button) => {
+          const isActive = button.getAttribute('data-language-button') === safeLang
+          button.setAttribute('aria-pressed', String(isActive))
+          button.toggleAttribute('data-active', isActive)
+        })
+
+        document.querySelectorAll('[data-github-link]').forEach((link) => {
+          link.setAttribute('href', githubUrl)
+        })
+
+        document.querySelectorAll('[data-copy-button]').forEach((button) => {
+          const copied = button.getAttribute('data-state') === 'copied'
+          button.textContent = copied ? dictionary.actions.copied : dictionary.actions.copy
+        })
+
+        renderTerminal(safeLang)
+        setMeta(safeLang)
+
+        if (persist) {
+          window.localStorage.setItem(STORAGE_KEY, safeLang)
+        }
+      }
+
+      const bindLanguageButtons = () => {
+        document.querySelectorAll('[data-language-button]').forEach((button) => {
+          button.addEventListener('click', () => {
+            applyLanguage(button.getAttribute('data-language-button'), true)
+          })
+        })
+      }
+
+      const bindCopyButtons = () => {
+        document.querySelectorAll('[data-copy-button]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(button.getAttribute('data-command') || '')
+              button.setAttribute('data-state', 'copied')
+              applyLanguage(document.documentElement.lang || defaultLang)
+              window.setTimeout(() => {
+                button.setAttribute('data-state', 'idle')
+                applyLanguage(document.documentElement.lang || defaultLang)
+              }, 1800)
+            } catch {
+              window.prompt('Copy command', button.getAttribute('data-command') || '')
+            }
+          })
+        })
+      }
+
+      const bindThemeToggle = () => {
+        const toggle = document.getElementById('theme-toggle')
+        if (!toggle) return
+
+        toggle.addEventListener('click', () => {
+          const current = document.documentElement.getAttribute('color-scheme')
+          const next = current === 'dark' ? 'light' : 'dark'
+
+          document.documentElement.setAttribute('color-scheme', next)
+          localStorage.setItem(THEME_KEY, next)
+
+          if (next === 'dark') {
+            document.documentElement.classList.add('color-scheme-dark')
+            document.documentElement.classList.remove('color-scheme-light')
+          } else {
+            document.documentElement.classList.add('color-scheme-light')
+            document.documentElement.classList.remove('color-scheme-dark')
+          }
+
+          var metaTheme = document.querySelector('meta[name="theme-color"]')
+          if (metaTheme) {
+            metaTheme.setAttribute('content', next === 'dark' ? '#141414' : '#BABEC8')
+          }
+        })
+      }
+
+      const initScrollAnimations = () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible')
+              observer.unobserve(entry.target)
+            }
+          })
+        }, { threshold: 0.1 })
+
+        document.querySelectorAll('.animate-in').forEach((el) => {
+          observer.observe(el)
+        })
+      }
+
+      bindLanguageButtons()
+      bindCopyButtons()
+      bindThemeToggle()
+      applyLanguage(detectLanguage())
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initScrollAnimations)
+      } else {
+        initScrollAnimations()
+      }
+    </script>
+  </body>
+</html>

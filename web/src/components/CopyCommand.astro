@@ -1,0 +1,17 @@
+---
+import { content, installCommand } from '../lib/content'
+---
+
+<div class="command-box">
+  <code class="command-box-code">{installCommand}</code>
+  <button
+    type="button"
+    class="copy-button"
+    data-copy-button
+    data-state="idle"
+    data-command={installCommand}
+    data-i18n="actions.copy"
+  >
+    {content.es.actions.copy}
+  </button>
+</div>
