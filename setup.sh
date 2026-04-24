@@ -14,7 +14,7 @@ fi
 set -u
 
 SCRIPT_NAME="hpsr.sh"
-SCRIPT_VERSION="0.2.0"
+SCRIPT_VERSION="0.2.1"
 SCRIPT_BRAND_PRIMARY="hpsr.sh"
 SCRIPT_BRAND_SECONDARY="hpsr.mx | hopsersmerk.com | hopsersmerk.dev"
 SCRIPT_BASE_DIR="/root/.server-setup"
@@ -98,6 +98,8 @@ SWAP_SIZE=""
 SUGGESTED_PACKAGES_SELECTED=()
 INSTALLED_PACKAGES=()
 SSH_SERVICE_NAME="ssh"
+SSH_SOCKET_NAME="ssh.socket"
+SSH_USES_SOCKET_ACTIVATION="no"
 OS_ID=""
 OS_VERSION=""
 SSH_CONFIG_PATH="/etc/ssh/sshd_config"
@@ -625,11 +627,26 @@ detect_ssh_port() {
 }
 
 detect_ssh_service_name() {
-  if systemctl list-unit-files 2>/dev/null | grep -q '^sshd\.service'; then
+  if command_exists systemctl && systemctl list-unit-files 2>/dev/null | grep -q '^sshd\.service'; then
     SSH_SERVICE_NAME="sshd"
   else
     SSH_SERVICE_NAME="ssh"
   fi
+}
+
+detect_ssh_socket_activation() {
+  SSH_USES_SOCKET_ACTIVATION="no"
+  command_exists systemctl || return 0
+  systemctl list-unit-files 2>/dev/null | grep -q '^ssh\.socket' || return 0
+  if systemctl is-enabled --quiet "$SSH_SOCKET_NAME" >> "$LOG_FILE" 2>&1 || systemctl is-active --quiet "$SSH_SOCKET_NAME" >> "$LOG_FILE" 2>&1; then
+    SSH_USES_SOCKET_ACTIVATION="yes"
+  fi
+}
+
+ssh_port_is_listening() {
+  local port="$1"
+  [[ -n "$port" ]] || return 1
+  ss -tlnp 2>>"$LOG_FILE" | awk 'NR > 1 {print $4}' | grep -Eq "(^|[.:*])${port}$"
 }
 
 detect_public_ip() {
@@ -669,6 +686,7 @@ prechecks() {
   detect_timezone
   detect_ssh_port
   detect_ssh_service_name
+  detect_ssh_socket_activation
   detect_public_ip
   detect_container
 
@@ -1200,6 +1218,7 @@ verify_setup() {
   detect_public_ip
   detect_container
   detect_ssh_service_name
+  detect_ssh_socket_activation
   detect_admin_user_for_verify
 
   section "$(msg verify_section)"
@@ -1228,7 +1247,7 @@ verify_setup() {
   key_value "PasswordAuthentication" "${password_auth:-unknown}"
   key_value "PubkeyAuthentication" "${pubkey_auth:-unknown}"
 
-  if [[ -n "$port_effective" ]] && ss -tln 2>>"$LOG_FILE" | awk '{print $4}' | grep -Eq "(^|[.:])${port_effective}$"; then
+  if [[ -n "$port_effective" ]] && ssh_port_is_listening "$port_effective"; then
     print_ok "$(msg listening_port): $port_effective"
   else
     print_fail "$(msg listening_port): ${port_effective:-unknown}"
@@ -1472,9 +1491,31 @@ apply_ssh_config() {
     die "sshd configuration validation failed. Check $LOG_FILE"
   fi
 
-  if service_action reload "$SSH_SERVICE_NAME" || service_action restart "$SSH_SERVICE_NAME"; then
-    SSH_APPLY_STATUS="reloaded"
-    print_ok "SSH configuration applied and validated"
+  if [[ "$SSH_USES_SOCKET_ACTIVATION" == "yes" ]]; then
+    if run_cmd systemctl daemon-reload && run_cmd systemctl restart "$SSH_SOCKET_NAME" && run_cmd systemctl restart "$SSH_SERVICE_NAME"; then
+      if ssh_port_is_listening "$SSH_PORT"; then
+        SSH_APPLY_STATUS="socket-restarted"
+        print_ok "SSH socket and service restarted on port $SSH_PORT"
+      else
+        SSH_APPLY_STATUS="socket-restarted-not-listening"
+        die "SSH socket restart completed but port $SSH_PORT is not listening"
+      fi
+    else
+      SSH_APPLY_STATUS="configured-not-restarted"
+      if [[ "$ENV_IS_CONTAINER" == "yes" ]]; then
+        print_warn "SSH config validated, but ssh.socket could not be restarted in this container"
+      else
+        print_warn "SSH config updated but ssh.socket restart failed in this environment"
+      fi
+    fi
+  elif service_action reload "$SSH_SERVICE_NAME" || service_action restart "$SSH_SERVICE_NAME"; then
+    if ssh_port_is_listening "$SSH_PORT"; then
+      SSH_APPLY_STATUS="reloaded"
+      print_ok "SSH configuration applied and validated"
+    else
+      SSH_APPLY_STATUS="reloaded-not-listening"
+      die "SSH service reloaded but port $SSH_PORT is not listening"
+    fi
   else
     SSH_APPLY_STATUS="configured-not-reloaded"
     if [[ "$ENV_IS_CONTAINER" == "yes" ]]; then
@@ -1893,6 +1934,7 @@ $(lang_is_en && printf '# hpsr.sh Server Setup Report' || printf '# Reporte de c
 ## SSH
 
 - $(lang_is_en && printf 'Port' || printf 'Puerto'): $SSH_PORT
+- $(lang_is_en && printf 'Socket activation' || printf 'Activacion por socket'): $SSH_USES_SOCKET_ACTIVATION
 - $(lang_is_en && printf 'Root login' || printf 'Login root'): $(lang_is_en && printf 'disabled' || printf 'deshabilitado')
 - $(lang_is_en && printf 'Password authentication' || printf 'Autenticacion por contrasena'): $(lang_is_en && printf 'disabled' || printf 'deshabilitada')
 - $(lang_is_en && printf 'Public key mode' || printf 'Modo de llave publica'): $SSH_KEY_MODE

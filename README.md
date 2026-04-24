@@ -110,8 +110,9 @@ El script aplica decisiones de hardening básicas y razonables para un servidor 
 2. Deshabilita la autenticación SSH por contraseña.
 3. Fuerza el uso de autenticación por llave pública.
 4. Permite configurar un puerto SSH personalizado, con `666` como sugerencia por defecto.
-5. Valida la configuración de `sshd` antes de recargar el servicio cuando el entorno lo permite.
-6. Genera backup de `sshd_config` antes de modificarlo.
+5. Valida la configuración de `sshd` antes de aplicar el cambio cuando el entorno lo permite.
+6. En Ubuntu moderno con `ssh.socket`, reinicia `ssh.socket` y `ssh.service` en el orden correcto para mover el puerto real de escucha.
+7. Genera backup de `sshd_config` antes de modificarlo.
 
 ### 5. Configura firewall con UFW
 
@@ -241,6 +242,12 @@ Entornos recomendados:
 2. Máquinas virtuales
 3. Servidores con `systemd`
 
+Notas de compatibilidad relevantes:
+
+1. Debian y Ubuntu con modelo tradicional de `sshd` siguen usando recarga o reinicio del servicio SSH.
+2. Ubuntu 24.04+ y especialmente Ubuntu 26.04+ pueden usar `ssh.socket` con `systemd` socket activation.
+3. En esos casos, `hpsr.sh` detecta `ssh.socket`, aplica el nuevo `Port` en `sshd_config`, reinicia `ssh.socket` y luego `ssh.service`, y verifica que el nuevo puerto esté realmente en escucha antes de continuar con `ufw`.
+
 También puede ejecutarse en contenedores para pruebas parciales, pero hay limitaciones naturales en:
 
 1. `hostnamectl`
@@ -337,16 +344,17 @@ bash setup.sh --verify
 Este modo revisa, entre otras cosas:
 
 1. Puerto SSH efectivo.
-2. `PermitRootLogin`.
-3. `PasswordAuthentication`.
-4. `PubkeyAuthentication`.
-5. Estado de `authorized_keys`.
-6. Llaves administradas por `hpsr.sh`.
-7. Llaves externas válidas.
-8. Líneas inválidas dentro de `authorized_keys`.
-9. Estado de `ufw`.
-10. Estado de `fail2ban`.
-11. Presencia de `unattended-upgrades`.
+2. Puerto SSH realmente en escucha.
+3. `PermitRootLogin`.
+4. `PasswordAuthentication`.
+5. `PubkeyAuthentication`.
+6. Estado de `authorized_keys`.
+7. Llaves administradas por `hpsr.sh`.
+8. Llaves externas válidas.
+9. Líneas inválidas dentro de `authorized_keys`.
+10. Estado de `ufw`.
+11. Estado de `fail2ban`.
+12. Presencia de `unattended-upgrades`.
 
 El objetivo es reducir la incertidumbre después del setup y facilitar el diagnóstico sin reaplicar cambios.
 
