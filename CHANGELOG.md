@@ -4,6 +4,19 @@ Todos los cambios relevantes de `hpsr.sh` se documentarán aquí.
 
 El formato está inspirado en Keep a Changelog y el proyecto usa una estrategia simple de versionado semántico.
 
+## [0.2.1] - 2026-04-23
+
+### Changed
+
+1. El flujo SSH ahora detecta automáticamente si el sistema usa `ssh.socket` o el modelo tradicional de `sshd`.
+2. La verificación final ahora comprueba el puerto SSH configurado y el puerto realmente en escucha antes de marcar el setup como correcto.
+
+### Fixed
+
+1. Compatibilidad con Ubuntu 26.04+ cuando OpenSSH usa `systemd` socket activation.
+2. Reinicio seguro de SSH en el orden `ssh.socket` y luego `ssh.service` después de cambiar `Port` en `sshd_config`.
+3. Aplicación más segura de `ufw` al exigir que el nuevo puerto SSH ya esté en escucha antes de continuar.
+
 ## [0.2.0] - 2026-04-17
 
 ### Added
