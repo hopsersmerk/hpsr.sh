@@ -4,6 +4,19 @@ Todos los cambios relevantes de `hpsr.sh` se documentarán aquí.
 
 El formato está inspirado en Keep a Changelog y el proyecto usa una estrategia simple de versionado semántico.
 
+## [Unreleased]
+
+### Changed
+
+1. La landing y el punto de distribución pasan de `https://hpsr.sh` a `https://sh.hpsr.dev`.
+2. Se actualizan los comandos de instalación, metadata SEO, sitemap y previews sociales al nuevo dominio.
+3. El contacto público de seguridad y conducta pasa a ser `dante.clobato@hopsersmerk.com`.
+
+### Compatibility
+
+1. La marca `hpsr.sh`, el nombre `setup.sh` y los marcadores de llaves SSH administradas se mantienen sin cambios.
+2. El dominio anterior se redirigirá mientras siga registrado y bajo control del proyecto.
+
 ## [0.2.1] - 2026-04-23
 
 ### Changed

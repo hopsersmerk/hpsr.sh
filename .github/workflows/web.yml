@@ -1,0 +1,47 @@
+name: Web validation
+
+on:
+  push:
+    paths:
+      - 'web/**'
+      - 'setup.sh'
+      - '.github/workflows/web.yml'
+  pull_request:
+    paths:
+      - 'web/**'
+      - 'setup.sh'
+      - '.github/workflows/web.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type and Astro checks
+        run: npm run check
+
+      - name: Build static site
+        run: npm run build
+
+      - name: Verify canonical domain
+        run: |
+          if grep -R "https://hpsr.sh" dist; then
+            echo "Found a stale absolute URL for the retired canonical domain"
+            exit 1
+          fi
+          grep -R "https://sh.hpsr.dev" dist

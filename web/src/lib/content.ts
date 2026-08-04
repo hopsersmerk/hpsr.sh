@@ -50,7 +50,7 @@ type Content = {
   }
 }
 
-export const installCommand = 'curl -fsSL https://hpsr.sh/setup.sh | bash'
+export const installCommand = 'curl -fsSL https://sh.hpsr.dev/setup.sh | bash'
 
 export const content: Record<Language, Content> = {
   es: {

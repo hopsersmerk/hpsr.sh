@@ -25,20 +25,28 @@ const serializedTerminal = JSON.stringify(terminalLines)
 </section>
 
 <script>
-  const terminalState = {
+  type TerminalData = Record<string, string[]>
+
+  type TerminalState = {
+    scroller: number | null
+    root: HTMLDivElement | null
+    nodes: Record<string, DocumentFragment>
+  }
+
+  const terminalState: TerminalState = {
     scroller: null,
     root: null,
     nodes: {},
   }
 
-  const getTerminalData = () => {
-    const root = document.querySelector('[data-terminal-content]')
+  const getTerminalData = (): { root: HTMLDivElement | null; data: TerminalData | null } => {
+    const root = document.querySelector<HTMLDivElement>('[data-terminal-content]')
     if (!root) return { root: null, data: null }
 
     try {
       return {
         root,
-        data: JSON.parse(root.getAttribute('data-terminal-lines') || '{}'),
+        data: JSON.parse(root.getAttribute('data-terminal-lines') || '{}') as TerminalData,
       }
     } catch {
       return { root, data: null }
@@ -52,10 +60,10 @@ const serializedTerminal = JSON.stringify(terminalLines)
     }
   }
 
-  const buildRows = (lines) => {
+  const buildRows = (lines: string[]): DocumentFragment => {
     const fragment = document.createDocumentFragment()
 
-    lines.forEach((line) => {
+    lines.forEach((line: string) => {
       const row = document.createElement('div')
       row.className = line === '' ? 'terminal-row terminal-row-empty' : 'terminal-row'
 
@@ -106,14 +114,14 @@ const serializedTerminal = JSON.stringify(terminalLines)
     return fragment
   }
 
-  const startAutoScroll = (root) => {
+  const startAutoScroll = (root: HTMLDivElement) => {
     clearScroller()
 
     let last = performance.now()
     let pauseUntil = performance.now() + 900
     const speed = 18
 
-    const step = (now) => {
+    const step = (now: number) => {
       if (!root.isConnected) return
 
       const maxScroll = root.scrollHeight - root.clientHeight

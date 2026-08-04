@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://hpsr.sh/sitemap-index.xml
+Sitemap: https://sh.hpsr.dev/sitemap-index.xml

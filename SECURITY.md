@@ -6,7 +6,7 @@ Gracias por ayudar a que `hpsr.sh` sea más seguro.
 
 Si detectas una vulnerabilidad o un problema serio de seguridad, por favor repórtalo por correo a:
 
-`contacto@hpsr.sh`
+`dante.clobato@hopsersmerk.com`
 
 Incluye, si es posible:
 

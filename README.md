@@ -34,7 +34,9 @@ No intenta reemplazar herramientas más grandes como Ansible, Terraform o sistem
 
 La landing pública del proyecto vive en:
 
-`https://hpsr.sh`
+`https://sh.hpsr.dev`
+
+La marca y el nombre del script siguen siendo `hpsr.sh`; `sh.hpsr.dev` es el nuevo dominio canónico de la landing y del punto de distribución.
 
 Ahí puedes:
 
@@ -260,13 +262,13 @@ También puede ejecutarse en contenedores para pruebas parciales, pero hay limit
 ### Opción 1: ejecutar directamente
 
 ```bash
-curl -fsSL https://hpsr.sh/setup.sh | bash
+curl -fsSL https://sh.hpsr.dev/setup.sh | bash
 ```
 
 ### Opción 2: descargar y ejecutar
 
 ```bash
-curl -fsSL https://hpsr.sh/setup.sh -o setup.sh
+curl -fsSL https://sh.hpsr.dev/setup.sh -o setup.sh
 bash setup.sh
 ```
 

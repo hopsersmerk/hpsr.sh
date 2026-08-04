@@ -15,7 +15,7 @@ const muted = (text: string) => `${dim}${text}${reset}`
 
 export const terminalLines: Record<Language, string[]> = {
   es: [
-    `${accent}root@ubuntu:~#${reset} curl -fsSL https://hpsr.sh/setup.sh | bash`,
+    `${accent}root@ubuntu:~#${reset} curl -fsSL https://sh.hpsr.dev/setup.sh | bash`,
     '',
     hr,
     section('Selecciona idioma'),
@@ -271,7 +271,7 @@ export const terminalLines: Record<Language, string[]> = {
     '- Log: /root/.server-setup/logs/hpsr-setup-20260419-023712.log',
   ],
   en: [
-    `${accent}root@ubuntu:~#${reset} curl -fsSL https://hpsr.sh/setup.sh | bash`,
+    `${accent}root@ubuntu:~#${reset} curl -fsSL https://sh.hpsr.dev/setup.sh | bash`,
     '',
     hr,
     section('Select language'),

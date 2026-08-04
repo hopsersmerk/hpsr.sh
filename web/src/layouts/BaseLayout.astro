@@ -4,7 +4,7 @@ import { terminalLines } from '../lib/terminal'
 import '../styles/global.css'
 
 const githubUrl = 'https://github.com/hopsersmerk/hpsr.sh'
-const siteUrl = 'https://hpsr.sh'
+const siteUrl = 'https://sh.hpsr.dev'
 const ogImageUrl = `${siteUrl}/og-image.png`
 const serializedContent = JSON.stringify(content)
 const serializedTerminal = JSON.stringify(terminalLines)
@@ -71,8 +71,8 @@ const structuredData = JSON.stringify([
     <meta name="twitter:image" content={ogImageUrl} />
     <link rel="canonical" href={siteUrl} />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <script defer src="https://analytics.hopsersmerk.dev/script.js" data-website-id="bd4f5ca2-af22-456c-a0c7-b79172759041"></script>
-    <script type="application/ld+json" set:html={structuredData}></script>
+    <script is:inline defer src="https://analytics.hopsersmerk.dev/script.js" data-website-id="bd4f5ca2-af22-456c-a0c7-b79172759041"></script>
+    <script is:inline type="application/ld+json" set:html={structuredData}></script>
     <script is:inline>
       ;(function() {
         var stored = localStorage.getItem('hpsr-theme')

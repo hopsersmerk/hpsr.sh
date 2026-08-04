@@ -17,7 +17,7 @@
   <circle cx="174" cy="128" r="7" fill="#28C840"/>
   <text x="110" y="210" fill="#F2F5FC" font-family="Urbanist, Arial, sans-serif" font-size="82" font-weight="700" letter-spacing="-3">hpsr<tspan fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="74">.sh</tspan></text>
   <text x="110" y="268" fill="#AEB5C5" font-family="Urbanist, Arial, sans-serif" font-size="30" font-weight="500">Setup inicial y hardening para Debian y Ubuntu</text>
-  <text x="110" y="330" fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="24">curl -fsSL https://hpsr.sh/setup.sh | bash</text>
+  <text x="110" y="330" fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="24">curl -fsSL https://sh.hpsr.dev/setup.sh | bash</text>
   <rect x="110" y="370" width="620" height="130" rx="18" fill="#141418" stroke="rgba(242,223,255,0.16)"/>
   <text x="140" y="418" fill="#F2DFFF" font-family="IBM Plex Mono, monospace" font-size="20">&gt; VERIFICACIONES [1/9]</text>
   <text x="140" y="454" fill="#78DCA0" font-family="IBM Plex Mono, monospace" font-size="18">[ OK ]</text>

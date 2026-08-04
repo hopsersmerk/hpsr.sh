@@ -40,7 +40,7 @@ Este código aplica en:
 
 Si necesitas reportar una conducta inapropiada, puedes contactar a:
 
-`contacto@hpsr.sh`
+`dante.clobato@hopsersmerk.com`
 
 Los reportes serán revisados y tratados de forma razonable y confidencial según el contexto.
 
