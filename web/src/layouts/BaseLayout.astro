@@ -71,7 +71,12 @@ const structuredData = JSON.stringify([
     <meta name="twitter:image" content={ogImageUrl} />
     <link rel="canonical" href={siteUrl} />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <script is:inline defer src="https://analytics.hopsersmerk.dev/script.js" data-website-id="bd4f5ca2-af22-456c-a0c7-b79172759041"></script>
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script is:inline async src="https://analytics.hpsr.dev/js/pa-InPZ8rwjg6QSZw694Tnpp.js"></script>
+    <script is:inline>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init()
+    </script>
     <script is:inline type="application/ld+json" set:html={structuredData}></script>
     <script is:inline>
       ;(function() {
@@ -208,8 +213,12 @@ const structuredData = JSON.stringify([
       const bindCopyButtons = () => {
         document.querySelectorAll('[data-copy-button]').forEach((button) => {
           button.addEventListener('click', async () => {
+            const command = button.getAttribute('data-command') || ''
+            if (typeof window.plausible === 'function') {
+              window.plausible('Copy Install Command', { props: { command } })
+            }
             try {
-              await navigator.clipboard.writeText(button.getAttribute('data-command') || '')
+              await navigator.clipboard.writeText(command)
               button.setAttribute('data-state', 'copied')
               applyLanguage(document.documentElement.lang || defaultLang)
               window.setTimeout(() => {
@@ -217,7 +226,7 @@ const structuredData = JSON.stringify([
                 applyLanguage(document.documentElement.lang || defaultLang)
               }, 1800)
             } catch {
-              window.prompt('Copy command', button.getAttribute('data-command') || '')
+              window.prompt('Copy command', command)
             }
           })
         })
