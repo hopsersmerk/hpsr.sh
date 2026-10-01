@@ -1,28 +1,275 @@
 ---
-import { content } from '../lib/content'
 import { terminalLines } from '../lib/terminal'
+import type { Language } from '../lib/content'
+
+interface Props {
+  badge: string
+  title: string
+  description: string
+  lang: Language
+  replayText?: string
+  copyOutputText?: string
+}
+
+const {
+  badge,
+  title,
+  description,
+  lang,
+  replayText = 'Reiniciar',
+  copyOutputText = 'Copiar terminal'
+} = Astro.props
 
 const serializedTerminal = JSON.stringify(terminalLines)
 ---
 
-<section class="section" id="flow">
-  <div class="container split-section split-section-terminal">
-    <div class="split-copy">
-      <span class="terminal-badge" data-i18n="terminal.badge">{content.es.terminal.badge}</span>
-      <h2 data-i18n="terminal.title">{content.es.terminal.title}</h2>
-      <p data-i18n="terminal.description">{content.es.terminal.description}</p>
+<section class="section terminal-section" id="terminal">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">
+        <span class="badge-dot"></span>
+        <span>{badge}</span>
+      </div>
+      <h2 class="section-title">{title}</h2>
+      <p class="section-description">{description}</p>
     </div>
 
-    <div class="terminal-shell">
-      <div class="terminal-topbar">
-        <span class="dot dot-red"></span>
-        <span class="dot dot-yellow"></span>
-        <span class="dot dot-green"></span>
+    <div class="terminal-container">
+      <span class="corner-plus corner-tl" aria-hidden="true">+</span>
+      <span class="corner-plus corner-tr" aria-hidden="true">+</span>
+      <span class="corner-plus corner-bl" aria-hidden="true">+</span>
+      <span class="corner-plus corner-br" aria-hidden="true">+</span>
+
+      <div class="terminal-shell" data-terminal-shell data-terminal-lang={lang}>
+        <div class="terminal-topbar">
+          <div class="terminal-controls">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+
+          <div class="terminal-titlebar">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" class="titlebar-icon">
+              <polyline points="4 17 10 11 4 5"></polyline>
+              <line x1="12" y1="19" x2="20" y2="19"></line>
+            </svg>
+            <span>root@ubuntu:~ — hpsr.sh v0.2.0</span>
+          </div>
+
+          <div class="terminal-actions">
+            <button
+              type="button"
+              class="term-action-btn"
+              data-term-replay
+              title={replayText}
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              <span>{replayText}</span>
+            </button>
+            <button
+              type="button"
+              class="term-action-btn"
+              data-term-copy
+              title={copyOutputText}
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="term-copy-text">{copyOutputText}</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="terminal-content-live"
+          data-terminal-content
+          data-terminal-lines={serializedTerminal}
+        ></div>
+
+        <div class="terminal-statusbar">
+          <span class="status-indicator">
+            <span class="status-dot"></span>
+            <span>SIMULACIÓN ACTIVA</span>
+          </span>
+          <span class="status-mode">BASH 5.2 · DEBIAN/UBUNTU</span>
+        </div>
       </div>
-      <div class="terminal-content terminal-content-live" data-terminal-content data-terminal-lines={serializedTerminal}></div>
     </div>
   </div>
 </section>
+
+<style>
+  .terminal-section {
+    position: relative;
+    padding: 10rem 0;
+  }
+
+  .terminal-container {
+    position: relative;
+    max-width: 96rem;
+    margin: 5rem auto 0;
+  }
+
+  .terminal-shell {
+    position: relative;
+    width: 100%;
+    border: 1px solid var(--border-strong);
+    background: var(--terminal-bg);
+    border-radius: var(--radius-m);
+    box-shadow: 0 24px 48px -12px var(--shadow-color);
+    overflow: hidden;
+  }
+
+  .terminal-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    gap: 12px;
+  }
+
+  .terminal-controls {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 999px;
+  }
+
+  .dot-red { background: #ff5f56; }
+  .dot-yellow { background: #ffbd2e; }
+  .dot-green { background: #27c93f; }
+
+  .terminal-titlebar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    user-select: none;
+  }
+
+  .titlebar-icon {
+    color: var(--accent);
+  }
+
+  .terminal-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .term-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+  }
+
+  .term-action-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .terminal-content-live {
+    height: 42rem;
+    overflow-y: auto;
+    padding: 1.8rem 2.2rem;
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    line-height: 1.7;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(242, 223, 255, 0.25) transparent;
+  }
+
+  .terminal-content-live::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .terminal-content-live::-webkit-scrollbar-thumb {
+    background: rgba(242, 223, 255, 0.2);
+    border-radius: 999px;
+  }
+
+  .terminal-statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.3);
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    user-select: none;
+  }
+
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+  }
+
+  .status-mode {
+    letter-spacing: 0.05em;
+  }
+
+  /* Corner plus decorations */
+  .corner-plus {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--border-accent);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .corner-tl { top: -6px; left: -5px; }
+  .corner-tr { top: -6px; right: -5px; }
+  .corner-bl { bottom: -6px; left: -5px; }
+  .corner-br { bottom: -6px; right: -5px; }
+
+  @media (max-width: 640px) {
+    .terminal-titlebar {
+      display: none;
+    }
+    .terminal-content-live {
+      height: 32rem;
+      padding: 1.4rem;
+      font-size: 1.15rem;
+    }
+  }
+</style>
 
 <script>
   type TerminalData = Record<string, string[]>
@@ -30,33 +277,23 @@ const serializedTerminal = JSON.stringify(terminalLines)
   type TerminalState = {
     scroller: number | null
     root: HTMLDivElement | null
-    nodes: Record<string, DocumentFragment>
+    data: TerminalData | null
+    lang: string
+    isPaused: boolean
   }
 
-  const terminalState: TerminalState = {
+  const state: TerminalState = {
     scroller: null,
     root: null,
-    nodes: {},
-  }
-
-  const getTerminalData = (): { root: HTMLDivElement | null; data: TerminalData | null } => {
-    const root = document.querySelector<HTMLDivElement>('[data-terminal-content]')
-    if (!root) return { root: null, data: null }
-
-    try {
-      return {
-        root,
-        data: JSON.parse(root.getAttribute('data-terminal-lines') || '{}') as TerminalData,
-      }
-    } catch {
-      return { root, data: null }
-    }
+    data: null,
+    lang: 'es',
+    isPaused: false
   }
 
   const clearScroller = () => {
-    if (terminalState.scroller) {
-      window.cancelAnimationFrame(terminalState.scroller)
-      terminalState.scroller = null
+    if (state.scroller) {
+      window.cancelAnimationFrame(state.scroller)
+      state.scroller = null
     }
   }
 
@@ -118,11 +355,11 @@ const serializedTerminal = JSON.stringify(terminalLines)
     clearScroller()
 
     let last = performance.now()
-    let pauseUntil = performance.now() + 900
-    const speed = 18
+    let pauseUntil = performance.now() + 1000
+    const speed = 22
 
     const step = (now: number) => {
-      if (!root.isConnected) return
+      if (!root.isConnected || state.isPaused) return
 
       const maxScroll = root.scrollHeight - root.clientHeight
       if (maxScroll <= 0) return
@@ -135,49 +372,85 @@ const serializedTerminal = JSON.stringify(terminalLines)
       }
 
       if (root.scrollTop >= maxScroll - 2) {
-        pauseUntil = now + 1200
+        pauseUntil = now + 1500
         root.scrollTop = 0
       }
 
-      terminalState.scroller = window.requestAnimationFrame(step)
+      state.scroller = window.requestAnimationFrame(step)
     }
 
-    terminalState.scroller = window.requestAnimationFrame(step)
+    state.scroller = window.requestAnimationFrame(step)
   }
 
-  const renderTerminal = (lang = 'es') => {
-    const { data } = getTerminalData()
-    if (!terminalState.root || !data) return
+  const renderTerminal = () => {
+    if (!state.root || !state.data) return
 
-    const safeLang = data[lang] ? lang : 'es'
-    if (!terminalState.nodes[safeLang]) {
-      terminalState.nodes[safeLang] = buildRows(data[safeLang] || [])
-    }
-
+    const lines = state.data[state.lang] || state.data['es'] || []
     clearScroller()
-    terminalState.root.replaceChildren(terminalState.nodes[safeLang].cloneNode(true))
-    terminalState.root.scrollTop = 0
-    startAutoScroll(terminalState.root)
+    state.root.replaceChildren(buildRows(lines))
+    state.root.scrollTop = 0
+    startAutoScroll(state.root)
   }
 
-  const mountTerminal = () => {
-    const { root } = getTerminalData()
-    if (!root) return
+  const mount = () => {
+    const root = document.querySelector<HTMLDivElement>('[data-terminal-content]')
+    const shell = document.querySelector<HTMLElement>('[data-terminal-shell]')
+    if (!root || !shell) return
 
-    if (!terminalState.root) {
-      terminalState.root = root
-      window.__hpsrRenderTerminal = renderTerminal
+    state.root = root
+    state.lang = shell.getAttribute('data-terminal-lang') || 'es'
 
-      root.addEventListener('mouseenter', clearScroller)
-      root.addEventListener('mouseleave', () => startAutoScroll(root))
+    try {
+      state.data = JSON.parse(root.getAttribute('data-terminal-lines') || '{}')
+    } catch {
+      state.data = {}
     }
 
-    renderTerminal(document.documentElement.lang || 'es')
+    renderTerminal()
+
+    // Hover pause
+    root.addEventListener('mouseenter', () => {
+      state.isPaused = true
+      clearScroller()
+    })
+
+    root.addEventListener('mouseleave', () => {
+      state.isPaused = false
+      startAutoScroll(root)
+    })
+
+    // Replay button
+    const replayBtn = shell.querySelector<HTMLButtonElement>('[data-term-replay]')
+    if (replayBtn) {
+      replayBtn.addEventListener('click', () => {
+        renderTerminal()
+      })
+    }
+
+    // Copy log button
+    const copyBtn = shell.querySelector<HTMLButtonElement>('[data-term-copy]')
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        const lines = (state.data?.[state.lang] || []).join('\n')
+        const textSpan = copyBtn.querySelector<HTMLElement>('.term-copy-text')
+        const originalText = textSpan?.textContent || 'Copiar'
+
+        try {
+          await navigator.clipboard.writeText(lines)
+          if (textSpan) textSpan.textContent = '✓ Copiado'
+          setTimeout(() => {
+            if (textSpan) textSpan.textContent = originalText
+          }, 1800)
+        } catch {
+          window.prompt('Log:', lines)
+        }
+      })
+    }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mountTerminal, { once: true })
+    document.addEventListener('DOMContentLoaded', mount, { once: true })
   } else {
-    mountTerminal()
+    mount()
   }
 </script>

@@ -1,24 +1,356 @@
 ---
-import { content } from '../lib/content'
-import CopyCommand from './CopyCommand.astro'
+import type { Language, StatItem } from '../lib/content'
+import AsciiCanvas from './AsciiCanvas.astro'
+import CommandTabs from './CommandTabs.astro'
+
+interface Props {
+  lang: Language
+  eyebrow: string
+  title: string
+  titleAccent: string
+  description: string
+  note: string
+  secondaryCta: string
+  stats: StatItem[]
+  platformsTitle: string
+  platforms: string[]
+  commandHint: string
+  actions: {
+    copy: string
+    copied: string
+  }
+}
+
+const {
+  lang,
+  eyebrow,
+  title,
+  titleAccent,
+  description,
+  note,
+  secondaryCta,
+  stats,
+  platformsTitle,
+  platforms,
+  commandHint,
+  actions
+} = Astro.props
 ---
 
-<section class="hero section animate-in" id="top">
-  <div class="container hero-layout">
-    <p class="eyebrow" data-i18n="hero.eyebrow">{content.es.hero.eyebrow}</p>
-    <h1 class="hero-title" data-i18n="hero.title">{content.es.hero.title}</h1>
-    <p class="hero-description" data-i18n="hero.description">{content.es.hero.description}</p>
+<section class="hero-section" id="top">
+  <!-- Interactive ASCII Canvas in Hero background -->
+  <AsciiCanvas />
 
-    <div class="hero-command-wrap">
-      <CopyCommand />
-      <p class="command-hint" data-i18n="hero.commandHint">{content.es.hero.commandHint}</p>
+  <div class="container hero-container">
+    <!-- Version & Type Eyebrow -->
+    <div class="hero-eyebrow-wrap">
+      <span class="eyebrow-pill">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span>{eyebrow}</span>
+      </span>
     </div>
 
-    <div class="hero-actions">
-      <a class="hero-link hero-link-pill" href="/setup.sh" data-i18n="hero.secondary">{content.es.hero.secondary}</a>
-      <a class="hero-link hero-link-pill" data-github-link href="https://github.com/hopsersmerk/hpsr.sh" data-i18n="hero.primary">{content.es.hero.primary}</a>
+    <!-- Main Display Headline -->
+    <h1 class="hero-headline">
+      <span class="headline-base">{title}</span>
+      <span class="headline-accent">{titleAccent}</span>
+    </h1>
+
+    <!-- Subheadline -->
+    <p class="hero-subhead">{description}</p>
+
+    <!-- Command Box Widget (Multi-tab) -->
+    <div class="hero-command-zone">
+      <CommandTabs actions={actions} />
+      <p class="hero-command-hint">{commandHint}</p>
+      <p class="hero-note">{note}</p>
     </div>
 
-    <p class="hero-note" data-i18n="hero.note">{content.es.hero.note}</p>
+    <!-- Action Buttons -->
+    <div class="hero-cta-group">
+      <a
+        href="https://github.com/hopsersmerk/hpsr.sh"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hero-btn hero-btn-primary"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path>
+        </svg>
+        <span>{secondaryCta}</span>
+      </a>
+
+      <a
+        href="/setup.sh"
+        download="setup.sh"
+        class="hero-btn hero-btn-secondary"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>{lang === 'es' ? 'Descargar setup.sh' : 'Download setup.sh'}</span>
+      </a>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="hero-stats-bar">
+      {stats.map((stat) => (
+        <div class="stat-pill">
+          <span class="stat-val">{stat.value}</span>
+          <span class="stat-lbl">{stat.label}</span>
+        </div>
+      ))}
+    </div>
+
+    <!-- Supported Platforms Ticker / Badges -->
+    <div class="hero-platforms-bar">
+      <span class="platforms-title">{platformsTitle}</span>
+      <div class="platforms-tags">
+        {platforms.map((p) => (
+          <span class="platform-tag">{p}</span>
+        ))}
+      </div>
+    </div>
   </div>
 </section>
+
+<style>
+  .hero-section {
+    position: relative;
+    padding: 8rem 0 10rem;
+    overflow: hidden;
+    min-height: 85dvh;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero-container {
+    position: relative;
+    z-index: 1;
+    max-width: 86rem;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .hero-eyebrow-wrap {
+    margin-bottom: 2.2rem;
+  }
+
+  .eyebrow-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-accent);
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text);
+    box-shadow: 0 0 20px -5px var(--accent-subtle);
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+    animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .hero-headline {
+    margin: 0 auto 2.2rem;
+    font-family: var(--font-sans);
+    font-size: clamp(3.6rem, 7vw, 6.4rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    max-width: 80rem;
+  }
+
+  .headline-base {
+    display: block;
+  }
+
+  .headline-accent {
+    display: block;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-subhead {
+    margin: 0 auto 3.6rem;
+    font-size: clamp(1.6rem, 2.2vw, 1.9rem);
+    line-height: 1.65;
+    color: var(--text-muted);
+    max-width: 68rem;
+  }
+
+  .hero-command-zone {
+    margin-bottom: 2.8rem;
+  }
+
+  .hero-command-hint {
+    margin: 1.2rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    color: var(--text-muted);
+  }
+
+  .hero-note {
+    margin: 0.8rem auto 0;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    max-width: 58rem;
+    line-height: 1.5;
+  }
+
+  .hero-cta-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 4.5rem;
+  }
+
+  .hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 1rem 2rem;
+    border-radius: 999px;
+    font-size: 1.4rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--transition-fast) ease;
+  }
+
+  .hero-btn-primary {
+    background: var(--text);
+    color: var(--bg);
+    border: 1px solid var(--text);
+  }
+
+  .hero-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -6px var(--shadow-color);
+    opacity: 0.94;
+  }
+
+  .hero-btn-secondary {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+
+  .hero-btn-secondary:hover {
+    transform: translateY(-2px);
+    background: var(--panel-hover);
+    border-color: var(--border-accent);
+  }
+
+  .hero-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    max-width: 72rem;
+    margin: 0 auto 4rem;
+    padding: 1.4rem;
+    border-radius: var(--radius-m);
+    border: 1px solid var(--border);
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+  }
+
+  @media (min-width: 640px) {
+    .hero-stats-bar {
+      grid-template-columns: repeat(4, 1fr);
+      padding: 1.2rem 2rem;
+    }
+  }
+
+  .stat-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .stat-val {
+    font-family: var(--font-mono);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-lbl {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .hero-platforms-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .platforms-title {
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .platforms-tags {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 68rem;
+  }
+
+  .platform-tag {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 640px) {
+    .hero-section {
+      padding: 5rem 0 7rem;
+    }
+    .hero-headline {
+      font-size: clamp(3rem, 9vw, 4.4rem);
+    }
+    .hero-cta-group {
+      flex-direction: column;
+      width: 100%;
+    }
+    .hero-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>

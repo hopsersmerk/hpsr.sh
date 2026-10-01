@@ -1,11 +1,11 @@
 ---
 ---
 
-<button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
-  <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Cambiar tema">
+  <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
   </svg>
-  <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
     <circle cx="12" cy="12" r="5"></circle>
     <line x1="12" y1="1" x2="12" y2="3"></line>
     <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -17,3 +17,41 @@
     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
   </svg>
 </button>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast) ease;
+  }
+
+  .theme-toggle:hover {
+    background: var(--panel-hover);
+    color: var(--text);
+    border-color: var(--border-accent);
+  }
+
+  /* Default (dark theme): show sun to switch to light */
+  .icon-moon {
+    display: none;
+  }
+  .icon-sun {
+    display: block;
+  }
+
+  /* When light theme: show moon to switch to dark */
+  :global([color-scheme="light"]) .icon-sun {
+    display: none;
+  }
+  :global([color-scheme="light"]) .icon-moon {
+    display: block;
+  }
+</style>

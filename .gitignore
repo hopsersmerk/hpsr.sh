@@ -2,3 +2,9 @@
 web/node_modules/
 web/dist/
 web/.astro/
+
+# Agent & AI tooling
+.agents/
+.claude/
+.aider-desk/
+skills-lock.json

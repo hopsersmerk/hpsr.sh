@@ -1,22 +1,63 @@
 ---
-import { content, installCommand } from '../lib/content'
+import { installCommand, type FooterLink } from '../lib/content'
+
+interface Props {
+  tagline: string
+  copyright: string
+  authorText: string
+  status: string
+  links: FooterLink[]
+}
+
+const { tagline, copyright, authorText, status, links } = Astro.props
 ---
 
 <footer class="site-footer">
-  <div class="container site-footer-inner">
-    <div class="footer-brand">
-      <img src="/logo.png" alt="hpsr.sh logo" class="footer-logo" />
-      <div>
-        <strong class="footer-brand-name">hpsr.sh</strong>
-        <p data-i18n="footer.tagline">{content.es.footer.tagline}</p>
+  <div class="container footer-container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#top" class="footer-logo-link">
+          <span class="footer-logo-frame">
+            <img src="/logo.png" alt="hpsr.sh logo" class="footer-logo-img" />
+          </span>
+          <span class="footer-brand-title">
+            <span class="brand-root">hpsr</span><span class="brand-ext">.sh</span>
+          </span>
+        </a>
+        <p class="footer-tagline">{tagline}</p>
+
+        <div class="footer-status-pill">
+          <span class="status-pulse" aria-hidden="true"></span>
+          <span>{status}</span>
+        </div>
+      </div>
+
+      <div class="footer-cmd-box">
+        <span class="cmd-label">Instalación rápida:</span>
+        <div class="cmd-inner">
+          <code class="cmd-text">{installCommand}</code>
+        </div>
       </div>
     </div>
 
-    <div class="footer-meta">
-      <code class="footer-command">{installCommand}</code>
+    <div class="footer-divider"></div>
+
+    <div class="footer-bottom">
+      <div class="footer-meta">
+        <p class="footer-copy">{copyright}</p>
+        <p class="footer-credits">
+          {authorText} <a href="https://hopsersmerk.com" target="_blank" rel="noopener noreferrer">hopsersmerk</a>
+        </p>
+      </div>
+
       <div class="footer-links">
-        {content.es.footer.links.map((link, index) => (
-          <a href={link.href} target="_blank" rel="noreferrer" data-i18n={`footer.links.${index}.label`}>
+        {links.map((link) => (
+          <a
+            href={link.href}
+            target={link.href.startsWith('http') ? '_blank' : '_self'}
+            rel={link.href.startsWith('http') ? 'noopener noreferrer' : ''}
+            class="footer-nav-link"
+          >
             {link.label}
           </a>
         ))}
@@ -24,3 +65,192 @@ import { content, installCommand } from '../lib/content'
     </div>
   </div>
 </footer>
+
+<style>
+  .site-footer {
+    position: relative;
+    padding: 8rem 0 5rem;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+  }
+
+  .footer-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+  }
+
+  .footer-top {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 3rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-top {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+  }
+
+  .footer-brand {
+    max-width: 44rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+
+  .footer-logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .footer-logo-frame {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: var(--radius-s);
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .footer-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .footer-brand-title {
+    font-family: var(--font-sans);
+    font-size: 1.7rem;
+    font-weight: 600;
+  }
+
+  .brand-root { color: var(--text); }
+  .brand-ext {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+  }
+
+  .footer-tagline {
+    margin: 0;
+    font-size: 1.4rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .footer-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    width: fit-content;
+  }
+
+  .status-pulse {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 6px #22c55e;
+  }
+
+  .footer-cmd-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 46rem;
+  }
+
+  .cmd-label {
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+  }
+
+  .cmd-inner {
+    padding: 1rem 1.4rem;
+    border-radius: var(--radius-s);
+    background: var(--terminal-bg);
+    border: 1px solid var(--border-strong);
+  }
+
+  .cmd-text {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    color: var(--terminal-text);
+    white-space: nowrap;
+    overflow-x: auto;
+    display: block;
+  }
+
+  .footer-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .footer-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .footer-bottom {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .footer-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .footer-copy, .footer-credits {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+  }
+
+  .footer-credits a {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .footer-nav-link {
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast) ease;
+  }
+
+  .footer-nav-link:hover {
+    color: var(--text);
+  }
+</style>

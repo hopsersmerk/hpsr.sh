@@ -1,0 +1,234 @@
+---
+import type { VerificationCommand } from '../lib/content'
+
+interface Props {
+  badge: string
+  title: string
+  description: string
+  items: VerificationCommand[]
+}
+
+const { badge, title, description, items } = Astro.props
+---
+
+<section class="section verification-section" id="verification">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">
+        <span class="badge-dot"></span>
+        <span>{badge}</span>
+      </div>
+      <h2 class="section-title">{title}</h2>
+      <p class="section-description">{description}</p>
+    </div>
+
+    <div class="verification-grid">
+      {items.map((item, index) => (
+        <article class="verification-card">
+          <span class="corner-plus corner-tl" aria-hidden="true">+</span>
+          <span class="corner-plus corner-tr" aria-hidden="true">+</span>
+          <span class="corner-plus corner-bl" aria-hidden="true">+</span>
+          <span class="corner-plus corner-br" aria-hidden="true">+</span>
+
+          <div class="verification-top">
+            <span class="verification-step">0{index + 1}</span>
+            <h3 class="verification-title">{item.title}</h3>
+          </div>
+
+          <div class="verification-cmd-box">
+            <span class="cmd-dollar" aria-hidden="true">$</span>
+            <code class="cmd-code">{item.cmd}</code>
+            <button
+              type="button"
+              class="v-copy-btn"
+              data-copy-cmd={item.cmd}
+              aria-label={`Copy command ${item.cmd}`}
+            >
+              <svg class="icon-copy" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span class="v-btn-text">Copiar</span>
+            </button>
+          </div>
+
+          <p class="verification-desc">{item.desc}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .verification-section {
+    position: relative;
+    padding: 10rem 0;
+  }
+
+  .verification-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 2rem;
+    margin-top: 5rem;
+  }
+
+  @media (min-width: 768px) {
+    .verification-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.4rem;
+    }
+  }
+
+  .verification-card {
+    position: relative;
+    padding: 2.6rem 2.4rem;
+    border-radius: var(--radius-m);
+    border: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    transition: border-color var(--transition-fast) ease, background-color var(--transition-fast) ease;
+  }
+
+  .verification-card:hover {
+    border-color: var(--border-accent);
+    background: var(--panel-hover);
+  }
+
+  .verification-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .verification-step {
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: var(--radius-s);
+    background: var(--accent-subtle);
+    border: 1px solid var(--border);
+  }
+
+  .verification-title {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 1.65rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .verification-cmd-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 1rem 1.4rem;
+    border-radius: var(--radius-s);
+    background: var(--terminal-bg);
+    border: 1px solid var(--border-strong);
+  }
+
+  .cmd-dollar {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    color: var(--accent);
+    font-weight: 600;
+    user-select: none;
+  }
+
+  .cmd-code {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    color: var(--terminal-text);
+    overflow-x: auto;
+    white-space: nowrap;
+    flex-grow: 1;
+  }
+
+  .v-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--terminal-text);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: all var(--transition-fast) ease;
+  }
+
+  .v-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+  }
+
+  .v-copy-btn.copied {
+    background: #059669;
+    color: #ffffff;
+    border-color: #059669;
+  }
+
+  .verification-desc {
+    margin: 0;
+    font-size: 1.35rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  /* Corner plus decorations */
+  .corner-plus {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1;
+    color: var(--border-accent);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .corner-tl { top: -5px; left: -4px; }
+  .corner-tr { top: -5px; right: -4px; }
+  .corner-bl { bottom: -5px; left: -4px; }
+  .corner-br { bottom: -5px; right: -4px; }
+</style>
+
+<script>
+  (() => {
+    const initButtons = () => {
+      document.querySelectorAll<HTMLButtonElement>('[data-copy-cmd]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const cmd = btn.getAttribute('data-copy-cmd') || ''
+          const textSpan = btn.querySelector<HTMLElement>('.v-btn-text')
+          const originalText = textSpan?.textContent || 'Copiar'
+
+          try {
+            await navigator.clipboard.writeText(cmd)
+            btn.classList.add('copied')
+            if (textSpan) textSpan.textContent = '✓'
+
+            setTimeout(() => {
+              btn.classList.remove('copied')
+              if (textSpan) textSpan.textContent = originalText
+            }, 1600)
+          } catch {
+            window.prompt('Copy command:', cmd)
+          }
+        })
+      })
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initButtons, { once: true })
+    } else {
+      initButtons()
+    }
+  })()
+</script>

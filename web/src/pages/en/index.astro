@@ -1,24 +1,24 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro'
-import Navbar from '../components/Navbar.astro'
-import Hero from '../components/Hero.astro'
-import HardeningBlueprint from '../components/HardeningBlueprint.astro'
-import ComparisonMatrix from '../components/ComparisonMatrix.astro'
-import TerminalPreview from '../components/TerminalPreview.astro'
-import VerificationSection from '../components/VerificationSection.astro'
-import FaqSection from '../components/FaqSection.astro'
-import CtaBanner from '../components/CtaBanner.astro'
-import Footer from '../components/Footer.astro'
-import { content } from '../lib/content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Navbar from '../../components/Navbar.astro'
+import Hero from '../../components/Hero.astro'
+import HardeningBlueprint from '../../components/HardeningBlueprint.astro'
+import ComparisonMatrix from '../../components/ComparisonMatrix.astro'
+import TerminalPreview from '../../components/TerminalPreview.astro'
+import VerificationSection from '../../components/VerificationSection.astro'
+import FaqSection from '../../components/FaqSection.astro'
+import CtaBanner from '../../components/CtaBanner.astro'
+import Footer from '../../components/Footer.astro'
+import { content } from '../../lib/content'
 
-const c = content.es
+const c = content.en
 ---
 
-<BaseLayout lang="es" content={c}>
-  <Navbar lang="es" nav={c.nav} />
+<BaseLayout lang="en" content={c}>
+  <Navbar lang="en" nav={c.nav} />
   <main id="main-content">
     <Hero
-      lang="es"
+      lang="en"
       eyebrow={c.hero.eyebrow}
       title={c.hero.title}
       titleAccent={c.hero.titleAccent}
@@ -51,7 +51,7 @@ const c = content.es
       badge={c.terminal.badge}
       title={c.terminal.title}
       description={c.terminal.description}
-      lang="es"
+      lang="en"
       replayText={c.terminal.replay}
       copyOutputText={c.terminal.copyOutput}
     />

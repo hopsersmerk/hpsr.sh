@@ -1,0 +1,242 @@
+---
+import { installCommand } from '../lib/content'
+
+interface Props {
+  title: string
+  description: string
+  primaryCta: string
+  githubCta: string
+  copiedText?: string
+}
+
+const {
+  title,
+  description,
+  primaryCta,
+  githubCta,
+  copiedText = '¡Copiado!'
+} = Astro.props
+---
+
+<section class="section cta-banner-section">
+  <div class="container">
+    <div class="cta-banner-card">
+      <span class="corner-plus corner-tl" aria-hidden="true">+</span>
+      <span class="corner-plus corner-tr" aria-hidden="true">+</span>
+      <span class="corner-plus corner-bl" aria-hidden="true">+</span>
+      <span class="corner-plus corner-br" aria-hidden="true">+</span>
+
+      <div class="cta-content">
+        <h2 class="cta-title">{title}</h2>
+        <p class="cta-desc">{description}</p>
+
+        <div class="cta-command-wrap">
+          <span class="cta-prompt" aria-hidden="true">$</span>
+          <code class="cta-code">{installCommand}</code>
+          <button
+            type="button"
+            class="cta-copy-btn"
+            data-cta-copy
+            data-cmd={installCommand}
+            data-copied={copiedText}
+            data-idle={primaryCta}
+          >
+            <span class="cta-btn-text">{primaryCta}</span>
+          </button>
+        </div>
+
+        <div class="cta-links">
+          <a
+            href="https://github.com/hopsersmerk/hpsr.sh"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="cta-github-link"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path>
+            </svg>
+            <span>{githubCta}</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta-banner-section {
+    padding: 8rem 0 10rem;
+  }
+
+  .cta-banner-card {
+    position: relative;
+    padding: 6rem 3rem;
+    border-radius: var(--radius-l);
+    border: 1px solid var(--border-strong);
+    background: radial-gradient(circle at 50% 0%, var(--accent-subtle) 0%, var(--panel) 70%);
+    text-align: center;
+    box-shadow: 0 20px 40px -20px var(--shadow-color);
+  }
+
+  .cta-content {
+    max-width: 68rem;
+    margin: 0 auto;
+  }
+
+  .cta-title {
+    margin: 0 0 1.4rem;
+    font-family: var(--font-sans);
+    font-size: clamp(2.8rem, 5vw, 4.4rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  .cta-desc {
+    margin: 0 auto 3.6rem;
+    font-size: 1.65rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+    max-width: 54rem;
+  }
+
+  .cta-command-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px 8px 18px;
+    border-radius: 999px;
+    background: var(--terminal-bg);
+    border: 1px solid var(--border-strong);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .cta-prompt {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    color: var(--accent);
+    font-weight: 600;
+    user-select: none;
+  }
+
+  .cta-code {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    color: var(--terminal-text);
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+
+  .cta-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: none;
+    background: var(--text);
+    color: var(--bg);
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform var(--transition-fast) ease, opacity var(--transition-fast) ease;
+  }
+
+  .cta-copy-btn:hover {
+    transform: scale(1.02);
+    opacity: 0.92;
+  }
+
+  .cta-copy-btn.copied {
+    background: #059669;
+    color: #ffffff;
+  }
+
+  .cta-links {
+    margin-top: 2.4rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .cta-github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color var(--transition-fast) ease;
+  }
+
+  .cta-github-link:hover {
+    color: var(--text);
+  }
+
+  /* Corner plus decorations */
+  .corner-plus {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--border-accent);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .corner-tl { top: -6px; left: -5px; }
+  .corner-tr { top: -6px; right: -5px; }
+  .corner-bl { bottom: -6px; left: -5px; }
+  .corner-br { bottom: -6px; right: -5px; }
+
+  @media (max-width: 640px) {
+    .cta-banner-card {
+      padding: 4.4rem 2rem;
+    }
+    .cta-command-wrap {
+      flex-direction: column;
+      border-radius: var(--radius-m);
+      align-items: stretch;
+      padding: 1.4rem;
+      gap: 12px;
+    }
+    .cta-code {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      text-align: left;
+    }
+    .cta-copy-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const btn = document.querySelector<HTMLButtonElement>('[data-cta-copy]')
+    if (!btn) return
+
+    btn.addEventListener('click', async () => {
+      const cmd = btn.getAttribute('data-cmd') || ''
+      const idleText = btn.getAttribute('data-idle') || 'Copiar'
+      const copiedText = btn.getAttribute('data-copied') || '¡Copiado!'
+      const textSpan = btn.querySelector<HTMLElement>('.cta-btn-text')
+
+      try {
+        await navigator.clipboard.writeText(cmd)
+        btn.classList.add('copied')
+        if (textSpan) textSpan.textContent = copiedText
+
+        setTimeout(() => {
+          btn.classList.remove('copied')
+          if (textSpan) textSpan.textContent = idleText
+        }, 1800)
+      } catch {
+        window.prompt('Copy command:', cmd)
+      }
+    })
+  })()
+</script>

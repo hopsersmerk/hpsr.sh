@@ -1,13 +1,19 @@
 ---
-import { content } from '../lib/content'
-import { terminalLines } from '../lib/terminal'
+import type { Language, Content } from '../lib/content'
 import '../styles/global.css'
 
-const githubUrl = 'https://github.com/hopsersmerk/hpsr.sh'
+interface Props {
+  lang: Language
+  content: Content
+}
+
+const { lang, content } = Astro.props
+
 const siteUrl = 'https://sh.hpsr.dev'
+const pageUrl = lang === 'es' ? siteUrl : `${siteUrl}/en`
 const ogImageUrl = `${siteUrl}/og-image.png`
-const serializedContent = JSON.stringify(content)
-const serializedTerminal = JSON.stringify(terminalLines)
+
+// Structured data for SEO (Rich Snippets, SoftwareApplication, FAQPage, HowTo)
 const structuredData = JSON.stringify([
   {
     '@context': 'https://schema.org',
@@ -15,7 +21,7 @@ const structuredData = JSON.stringify([
     name: 'hpsr.sh',
     url: siteUrl,
     inLanguage: ['es', 'en'],
-    description: content.es.meta.description
+    description: content.meta.description
   },
   {
     '@context': 'https://schema.org',
@@ -27,12 +33,57 @@ const structuredData = JSON.stringify([
     url: siteUrl,
     downloadUrl: `${siteUrl}/setup.sh`,
     image: ogImageUrl,
-    description: content.es.meta.description,
+    description: content.meta.description,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD'
+    },
     author: {
-      '@type': 'Organization',
-      name: 'hpsr.sh',
-      url: siteUrl
+      '@type': 'Person',
+      name: 'hopsersmerk',
+      url: 'https://hopsersmerk.com'
     }
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: content.faq.items.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a
+      }
+    }))
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: lang === 'es' ? 'Cómo hacer setup inicial y hardening de un VPS Debian o Ubuntu' : 'How to perform initial setup and hardening on a Debian or Ubuntu VPS',
+    description: content.meta.description,
+    step: [
+      {
+        '@type': 'HowToStep',
+        name: lang === 'es' ? 'Conéctate a tu VPS por SSH como root' : 'Connect to your VPS via SSH as root',
+        text: 'ssh root@TU_IP'
+      },
+      {
+        '@type': 'HowToStep',
+        name: lang === 'es' ? 'Ejecuta el comando del asistente' : 'Run the installer command',
+        text: 'curl -fsSL https://sh.hpsr.dev/setup.sh | bash'
+      },
+      {
+        '@type': 'HowToStep',
+        name: lang === 'es' ? 'Sigue los pasos interactivos del asistente' : 'Follow the interactive prompts',
+        text: lang === 'es' ? 'Configura usuario no-root, llaves SSH, puerto custom, firewall UFW y Fail2ban' : 'Configure non-root user, SSH keys, custom port, UFW firewall, and Fail2ban'
+      },
+      {
+        '@type': 'HowToStep',
+        name: lang === 'es' ? 'Prueba la nueva sesión y guarda el reporte' : 'Test new connection and save the report',
+        text: lang === 'es' ? 'Prueba el acceso en una nueva terminal antes de cerrar la sesión root' : 'Test access in a new terminal window before closing your root session'
+      }
+    ]
   },
   {
     '@context': 'https://schema.org',
@@ -46,243 +97,105 @@ const structuredData = JSON.stringify([
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang} color-scheme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{content.es.meta.title}</title>
-    <meta name="description" content={content.es.meta.description} />
+    <title>{content.meta.title}</title>
+    <meta name="description" content={content.meta.description} />
+    <meta name="keywords" content={content.meta.keywords} />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="application-name" content="hpsr.sh" />
-    <meta name="theme-color" content="#BABEC8" />
+    <meta name="theme-color" content="#09090b" />
+
+    <!-- OpenGraph / Social Metadata -->
     <meta property="og:site_name" content="hpsr.sh" />
-    <meta property="og:locale" content="es_MX" />
-    <meta property="og:title" content={content.es.meta.title} />
-    <meta property="og:description" content={content.es.meta.description} />
+    <meta property="og:locale" content={lang === 'es' ? 'es_MX' : 'en_US'} />
+    <meta property="og:title" content={content.meta.title} />
+    <meta property="og:description" content={content.meta.description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={siteUrl} />
+    <meta property="og:url" content={pageUrl} />
     <meta property="og:image" content={ogImageUrl} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:type" content="image/png" />
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={content.es.meta.title} />
-    <meta name="twitter:description" content={content.es.meta.description} />
+    <meta name="twitter:title" content={content.meta.title} />
+    <meta name="twitter:description" content={content.meta.description} />
     <meta name="twitter:image" content={ogImageUrl} />
-    <link rel="canonical" href={siteUrl} />
+
+    <!-- Canonical and Reciprocal Hreflang Tags for SEO -->
+    <link rel="canonical" href={pageUrl} />
+    <link rel="alternate" hreflang="es" href="https://sh.hpsr.dev/" />
+    <link rel="alternate" hreflang="en" href="https://sh.hpsr.dev/en" />
+    <link rel="alternate" hreflang="x-default" href="https://sh.hpsr.dev/" />
+
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <!-- Privacy-friendly analytics by Plausible -->
+
+    <!-- Plausible Analytics -->
     <script is:inline async src="https://analytics.hpsr.dev/js/pa-InPZ8rwjg6QSZw694Tnpp.js"></script>
     <script is:inline>
       window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
       plausible.init()
     </script>
+
+    <!-- Schema.org JSON-LD Structured Data -->
     <script is:inline type="application/ld+json" set:html={structuredData}></script>
+
+    <!-- Theme initialization script (Dark-first, prevents flash) -->
     <script is:inline>
-      ;(function() {
-        var stored = localStorage.getItem('hpsr-theme')
-        var scheme = stored ? stored : 'light'
-        document.documentElement.setAttribute('color-scheme', scheme)
-        if (scheme === 'dark') {
-          document.documentElement.classList.add('color-scheme-dark')
-          document.documentElement.classList.remove('color-scheme-light')
-        } else {
-          document.documentElement.classList.add('color-scheme-light')
-          document.documentElement.classList.remove('color-scheme-dark')
-        }
-        var metaTheme = document.querySelector('meta[name="theme-color"]')
-        if (metaTheme) {
-          metaTheme.setAttribute('content', scheme === 'dark' ? '#141414' : '#BABEC8')
-        }
+      ;(() => {
+        try {
+          const stored = localStorage.getItem('hpsr-theme')
+          const scheme = stored ? stored : 'dark'
+          document.documentElement.setAttribute('color-scheme', scheme)
+          const metaTheme = document.querySelector('meta[name="theme-color"]')
+          if (metaTheme) {
+            metaTheme.setAttribute('content', scheme === 'dark' ? '#09090b' : '#fafafa')
+          }
+        } catch (_) {}
       })()
     </script>
   </head>
   <body>
     <div class="page-shell">
-      <div class="page-glow page-glow-a"></div>
+      <div class="ambient-glow" aria-hidden="true"></div>
       <slot />
     </div>
-    <script is:inline define:vars={{ serializedContent, serializedTerminal, githubUrl }}>
-      const CONTENT = JSON.parse(serializedContent)
-      const TERMINAL = JSON.parse(serializedTerminal)
-      const STORAGE_KEY = 'hpsr-site-language'
-      const THEME_KEY = 'hpsr-theme'
-      const defaultLang = 'es'
 
-      const pathGet = (object, path) => {
-        return path.split('.').reduce((acc, part) => {
-          if (acc == null) return undefined
-          if (/^\d+$/.test(part)) return acc[Number(part)]
-          return acc[part]
-        }, object)
-      }
+    <!-- Global Client Interactions -->
+    <script is:inline>
+      ;(() => {
+        const THEME_KEY = 'hpsr-theme'
 
-      const detectLanguage = () => {
-        const stored = window.localStorage.getItem(STORAGE_KEY)
-        if (stored === 'es' || stored === 'en') return stored
+        const bindThemeToggle = () => {
+          const toggle = document.getElementById('theme-toggle')
+          if (!toggle) return
 
-        const languages = navigator.languages && navigator.languages.length > 0
-          ? navigator.languages
-          : [navigator.language || defaultLang]
+          toggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('color-scheme') || 'dark'
+            const next = current === 'dark' ? 'light' : 'dark'
 
-        return languages.some((value) => String(value).toLowerCase().startsWith('es')) ? 'es' : 'en'
-      }
-
-      const setMeta = (lang) => {
-        document.documentElement.lang = lang
-        document.title = CONTENT[lang].meta.title
-
-        const description = document.querySelector('meta[name="description"]')
-        const ogTitle = document.querySelector('meta[property="og:title"]')
-        const ogDescription = document.querySelector('meta[property="og:description"]')
-        const twitterTitle = document.querySelector('meta[name="twitter:title"]')
-        const twitterDescription = document.querySelector('meta[name="twitter:description"]')
-        const ogLocale = document.querySelector('meta[property="og:locale"]')
-
-        if (description) description.setAttribute('content', CONTENT[lang].meta.description)
-        if (ogTitle) ogTitle.setAttribute('content', CONTENT[lang].meta.title)
-        if (ogDescription) ogDescription.setAttribute('content', CONTENT[lang].meta.description)
-        if (twitterTitle) twitterTitle.setAttribute('content', CONTENT[lang].meta.title)
-        if (twitterDescription) twitterDescription.setAttribute('content', CONTENT[lang].meta.description)
-        if (ogLocale) ogLocale.setAttribute('content', lang === 'en' ? 'en_US' : 'es_MX')
-      }
-
-      const renderTerminal = (lang) => {
-        if (typeof window.__hpsrRenderTerminal === 'function') {
-          window.__hpsrRenderTerminal(lang)
-          return
-        }
-
-        const terminalContent = document.querySelector('[data-terminal-content]')
-        if (!terminalContent) return
-
-        terminalContent.innerHTML = ''
-
-        TERMINAL[lang].forEach((line, index) => {
-          const row = document.createElement('div')
-          row.className = line === '' ? 'terminal-line terminal-line-empty' : 'terminal-line'
-          row.textContent = line || ' '
-          row.style.animationDelay = `${index * 45}ms`
-          terminalContent.appendChild(row)
-        })
-      }
-
-      const applyLanguage = (lang, persist = false) => {
-        const safeLang = lang === 'en' ? 'en' : 'es'
-        const dictionary = CONTENT[safeLang]
-
-        document.querySelectorAll('[data-i18n]').forEach((node) => {
-          const key = node.getAttribute('data-i18n')
-          const value = pathGet(dictionary, key)
-          if (typeof value === 'string') {
-            node.textContent = value
-          }
-        })
-
-        document.querySelectorAll('[data-language-button]').forEach((button) => {
-          const isActive = button.getAttribute('data-language-button') === safeLang
-          button.setAttribute('aria-pressed', String(isActive))
-          button.toggleAttribute('data-active', isActive)
-        })
-
-        document.querySelectorAll('[data-github-link]').forEach((link) => {
-          link.setAttribute('href', githubUrl)
-        })
-
-        document.querySelectorAll('[data-copy-button]').forEach((button) => {
-          const copied = button.getAttribute('data-state') === 'copied'
-          button.textContent = copied ? dictionary.actions.copied : dictionary.actions.copy
-        })
-
-        renderTerminal(safeLang)
-        setMeta(safeLang)
-
-        if (persist) {
-          window.localStorage.setItem(STORAGE_KEY, safeLang)
-        }
-      }
-
-      const bindLanguageButtons = () => {
-        document.querySelectorAll('[data-language-button]').forEach((button) => {
-          button.addEventListener('click', () => {
-            applyLanguage(button.getAttribute('data-language-button'), true)
-          })
-        })
-      }
-
-      const bindCopyButtons = () => {
-        document.querySelectorAll('[data-copy-button]').forEach((button) => {
-          button.addEventListener('click', async () => {
-            const command = button.getAttribute('data-command') || ''
-            if (typeof window.plausible === 'function') {
-              window.plausible('Copy Install Command', { props: { command } })
-            }
+            document.documentElement.setAttribute('color-scheme', next)
             try {
-              await navigator.clipboard.writeText(command)
-              button.setAttribute('data-state', 'copied')
-              applyLanguage(document.documentElement.lang || defaultLang)
-              window.setTimeout(() => {
-                button.setAttribute('data-state', 'idle')
-                applyLanguage(document.documentElement.lang || defaultLang)
-              }, 1800)
-            } catch {
-              window.prompt('Copy command', command)
+              localStorage.setItem(THEME_KEY, next)
+            } catch (_) {}
+
+            const metaTheme = document.querySelector('meta[name="theme-color"]')
+            if (metaTheme) {
+              metaTheme.setAttribute('content', next === 'dark' ? '#09090b' : '#fafafa')
             }
           })
-        })
-      }
+        }
 
-      const bindThemeToggle = () => {
-        const toggle = document.getElementById('theme-toggle')
-        if (!toggle) return
-
-        toggle.addEventListener('click', () => {
-          const current = document.documentElement.getAttribute('color-scheme')
-          const next = current === 'dark' ? 'light' : 'dark'
-
-          document.documentElement.setAttribute('color-scheme', next)
-          localStorage.setItem(THEME_KEY, next)
-
-          if (next === 'dark') {
-            document.documentElement.classList.add('color-scheme-dark')
-            document.documentElement.classList.remove('color-scheme-light')
-          } else {
-            document.documentElement.classList.add('color-scheme-light')
-            document.documentElement.classList.remove('color-scheme-dark')
-          }
-
-          var metaTheme = document.querySelector('meta[name="theme-color"]')
-          if (metaTheme) {
-            metaTheme.setAttribute('content', next === 'dark' ? '#141414' : '#BABEC8')
-          }
-        })
-      }
-
-      const initScrollAnimations = () => {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('visible')
-              observer.unobserve(entry.target)
-            }
-          })
-        }, { threshold: 0.1 })
-
-        document.querySelectorAll('.animate-in').forEach((el) => {
-          observer.observe(el)
-        })
-      }
-
-      bindLanguageButtons()
-      bindCopyButtons()
-      bindThemeToggle()
-      applyLanguage(detectLanguage())
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initScrollAnimations)
-      } else {
-        initScrollAnimations()
-      }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', bindThemeToggle, { once: true })
+        } else {
+          bindThemeToggle()
+        }
+      })()
     </script>
   </body>
 </html>

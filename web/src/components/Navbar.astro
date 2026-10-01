@@ -1,26 +1,256 @@
 ---
-import { content } from '../lib/content'
+import type { Language } from '../lib/content'
 import ThemeToggle from './ThemeToggle.astro'
+
+interface Props {
+  lang: Language
+  nav: {
+    blueprint: string
+    comparison: string
+    terminal: string
+    verification: string
+    faq: string
+    github: string
+    language: string
+    otherLangLabel: string
+    otherLangUrl: string
+    copyCommand: string
+  }
+}
+
+const { lang, nav } = Astro.props
 ---
 
-<div class="site-brand-island">
-  <a class="brand-link" href="#top" aria-label="hpsr.sh home">
-    <span class="brand-logo-shell">
-      <img src="/logo.png" alt="hpsr.sh logo" class="brand-logo" />
-    </span>
-    <span class="brand-name">
-      <span class="brand-name-root">hpsr</span><span class="brand-name-ext">.sh</span>
-    </span>
-  </a>
-</div>
+<header class="site-header">
+  <div class="header-container">
+    <div class="header-brand">
+      <a href={lang === 'es' ? '/' : '/en'} class="brand-link" aria-label="hpsr.sh home">
+        <span class="brand-logo-frame">
+          <img src="/logo.png" alt="hpsr.sh logo" class="brand-logo-img" />
+        </span>
+        <span class="brand-title">
+          <span class="brand-name">hpsr</span><span class="brand-ext">.sh</span>
+        </span>
+      </a>
+      <span class="brand-version-pill">v0.2.0</span>
+    </div>
 
-<div class="site-controls-island">
-  <div class="language-switch" aria-label={content.es.nav.language}>
-    <button type="button" class="lang-button" data-language-button="es" aria-pressed="true">ES</button>
-    <button type="button" class="lang-button" data-language-button="en" aria-pressed="false">EN</button>
+    <nav class="header-nav" aria-label="Main Navigation">
+      <a href="#blueprint" class="nav-item">{nav.blueprint}</a>
+      <a href="#comparison" class="nav-item">{nav.comparison}</a>
+      <a href="#terminal" class="nav-item">{nav.terminal}</a>
+      <a href="#verification" class="nav-item">{nav.verification}</a>
+      <a href="#faq" class="nav-item">{nav.faq}</a>
+    </nav>
+
+    <div class="header-actions">
+      <!-- Language Switcher routing between / and /en -->
+      <a
+        href={nav.otherLangUrl}
+        class="lang-pill"
+        title={`Cambiar a ${nav.otherLangLabel}`}
+        aria-label={`Switch to ${nav.otherLangLabel}`}
+      >
+        <span class="lang-code current-lang">{lang.toUpperCase()}</span>
+        <span class="lang-divider">/</span>
+        <span class="lang-code target-lang">{nav.otherLangLabel}</span>
+      </a>
+
+      <!-- Theme Toggle -->
+      <ThemeToggle />
+
+      <!-- GitHub Link -->
+      <a
+        href="https://github.com/hopsersmerk/hpsr.sh"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="gh-button"
+        aria-label="GitHub Repository"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"></path>
+        </svg>
+        <span class="gh-label">{nav.github}</span>
+      </a>
+    </div>
   </div>
-  <ThemeToggle />
-  <a class="nav-link-gh" data-github-link href="https://github.com/hopsersmerk/hpsr.sh" data-i18n="nav.github">
-    {content.es.nav.github}
-  </a>
-</div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: rgba(var(--bg-rgb), 0.82);
+    border-bottom: 1px solid var(--border);
+    transition: background-color var(--transition-fast) ease, border-color var(--transition-fast) ease;
+  }
+
+  .header-container {
+    width: min(calc(100% - 32px), var(--container-width));
+    margin: 0 auto;
+    height: 6rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .brand-logo-frame {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: var(--radius-s);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .brand-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .brand-title {
+    font-family: var(--font-sans);
+    font-size: 1.7rem;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+
+  .brand-name {
+    color: var(--text);
+  }
+
+  .brand-ext {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .brand-version-pill {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--panel-strong);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .header-nav {
+    display: none;
+    align-items: center;
+    gap: 20px;
+  }
+
+  @media (min-width: 900px) {
+    .header-nav {
+      display: flex;
+    }
+  }
+
+  .nav-item {
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast) ease;
+  }
+
+  .nav-item:hover {
+    color: var(--text);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lang-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--transition-fast) ease;
+  }
+
+  .lang-pill:hover {
+    border-color: var(--border-accent);
+    background: var(--panel-hover);
+  }
+
+  .current-lang {
+    color: var(--text);
+  }
+
+  .lang-divider {
+    color: var(--border-accent);
+    font-size: 1rem;
+  }
+
+  .target-lang {
+    color: var(--text-muted);
+  }
+
+  .gh-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 1.3rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--transition-fast) ease;
+  }
+
+  .gh-button:hover {
+    background: var(--panel-hover);
+    border-color: var(--border-accent);
+  }
+
+  @media (max-width: 640px) {
+    .brand-version-pill {
+      display: none;
+    }
+    .gh-label {
+      display: none;
+    }
+    .gh-button {
+      padding: 6px 10px;
+    }
+  }
+</style>

@@ -1,0 +1,227 @@
+---
+// AsciiCanvas.astro — Interactive ASCII Canvas inspired by lamalama.com
+---
+
+<div class="ascii-canvas-wrapper" aria-hidden="true">
+  <canvas id="hero-ascii-canvas" class="ascii-canvas"></canvas>
+  <div class="ascii-canvas-overlay"></div>
+</div>
+
+<style>
+  .ascii-canvas-wrapper {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: auto;
+    z-index: 0;
+  }
+
+  .ascii-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0.75;
+    transition: opacity 0.5s ease;
+  }
+
+  .ascii-canvas-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* Vignette and bottom fade to seamlessly blend into next section */
+    background: radial-gradient(circle at 50% 35%, transparent 30%, var(--bg) 95%),
+                linear-gradient(180deg, transparent 65%, var(--bg) 100%);
+  }
+
+  [color-scheme="light"] .ascii-canvas {
+    opacity: 0.45;
+  }
+</style>
+
+<script>
+  (() => {
+    const canvas = document.getElementById('hero-ascii-canvas') as HTMLCanvasElement | null
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d', { alpha: true })
+    if (!ctx) return
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // ASCII density ramp from sparse to dense
+    const ASCII_RAMP = ' ·:+*#%@01/\\|[]{}'
+    const CHAR_W = 16
+    const CHAR_H = 20
+
+    let width = 0
+    let height = 0
+    let cols = 0
+    let rows = 0
+    let dpr = 1
+    let isVisible = true
+    let animationFrameId: number | null = null
+
+    // Mouse coordinates (interpolated for silky smooth fluid trailing)
+    const mouse = {
+      x: -1000,
+      y: -1000,
+      targetX: -1000,
+      targetY: -1000,
+      radius: 170,
+      active: false
+    }
+
+    let time = 0
+
+    const resize = () => {
+      if (!canvas) return
+      const rect = canvas.getBoundingClientRect()
+      dpr = Math.min(window.devicePixelRatio || 1, 2)
+      width = Math.floor(rect.width)
+      height = Math.floor(rect.height)
+      
+      canvas.width = Math.floor(width * dpr)
+      canvas.height = Math.floor(height * dpr)
+
+      cols = Math.ceil(width / CHAR_W) + 1
+      rows = Math.ceil(height / CHAR_H) + 1
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!canvas) return
+      const rect = canvas.getBoundingClientRect()
+      mouse.targetX = e.clientX - rect.left
+      mouse.targetY = e.clientY - rect.top
+      mouse.active = true
+    }
+
+    const onMouseLeave = () => {
+      mouse.targetX = -1000
+      mouse.targetY = -1000
+      mouse.active = false
+    }
+
+    const render = () => {
+      if (!isVisible || !ctx) {
+        animationFrameId = requestAnimationFrame(render)
+        return
+      }
+
+      time += 0.02
+
+      // Smooth mouse lerp
+      mouse.x += (mouse.targetX - mouse.x) * 0.15
+      mouse.y += (mouse.targetY - mouse.y) * 0.15
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.save()
+      ctx.scale(dpr, dpr)
+
+      // Theme-aware colors
+      const isDark = document.documentElement.getAttribute('color-scheme') !== 'light'
+      const baseAlpha = isDark ? 0.22 : 0.28
+      const font = '11px "Geist Mono", "IBM Plex Mono", ui-monospace, monospace'
+      ctx.font = font
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+
+      const now = time
+
+      for (let r = 0; r < rows; r++) {
+        const y = r * CHAR_H + CHAR_H / 2
+        for (let c = 0; c < cols; c++) {
+          const x = c * CHAR_W + CHAR_W / 2
+
+          // Distance from mouse cursor
+          const dx = x - mouse.x
+          const dy = y - mouse.y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+
+          // Background ambient cyber pulse
+          const ambientWave = Math.sin(c * 0.18 + now * 1.2) * Math.cos(r * 0.18 + now * 0.8)
+          
+          let intensity = (ambientWave + 1) * 0.5 * 0.25 // 0.0 to 0.25 ambient
+
+          let charIndex = 0
+          let fillStyle = ''
+
+          if (dist < mouse.radius) {
+            // Ripple effect under cursor
+            const mouseEffect = Math.max(0, 1 - dist / mouse.radius)
+            const ripple = Math.sin(dist * 0.08 - now * 4) * 0.5 + 0.5
+            intensity = Math.min(1, intensity + mouseEffect * 0.8 + ripple * 0.2)
+
+            // Dynamic glyph picking
+            charIndex = Math.min(
+              ASCII_RAMP.length - 1,
+              Math.floor(intensity * (ASCII_RAMP.length - 1))
+            )
+
+            // Accent glow color near cursor
+            if (isDark) {
+              const alpha = Math.min(0.95, baseAlpha + mouseEffect * 0.75)
+              // Lavender / purple technical accent (#f2dfff)
+              fillStyle = `rgba(242, 223, 255, ${alpha})`
+            } else {
+              const alpha = Math.min(0.9, baseAlpha + mouseEffect * 0.65)
+              fillStyle = `rgba(15, 23, 42, ${alpha})`
+            }
+          } else {
+            // Subtle ambient character
+            charIndex = intensity > 0.15 ? 1 : 0
+            if (isDark) {
+              fillStyle = `rgba(255, 255, 255, ${baseAlpha * (0.6 + intensity)})`
+            } else {
+              fillStyle = `rgba(15, 23, 42, ${baseAlpha * (0.6 + intensity)})`
+            }
+          }
+
+          const char = ASCII_RAMP[charIndex] || '·'
+          ctx.fillStyle = fillStyle
+          ctx.fillText(char, x, y)
+        }
+      }
+
+      ctx.restore()
+
+      if (!reducedMotion) {
+        animationFrameId = requestAnimationFrame(render)
+      }
+    }
+
+    // Observer to pause when out of viewport
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isVisible = entry.isIntersecting
+        })
+      },
+      { threshold: 0.05 }
+    )
+
+    observer.observe(canvas)
+
+    resize()
+    window.addEventListener('resize', resize, { passive: true })
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
+    window.addEventListener('mouseleave', onMouseLeave, { passive: true })
+
+    if (reducedMotion) {
+      // Just render one frame if user requested reduced motion
+      render()
+    } else {
+      animationFrameId = requestAnimationFrame(render)
+    }
+
+    // Cleanup on page transitions
+    document.addEventListener('astro:before-swap', () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId)
+      window.removeEventListener('resize', resize)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseleave', onMouseLeave)
+      observer.disconnect()
+    }, { once: true })
+  })()
+</script>

@@ -1,0 +1,340 @@
+---
+import { installCommands } from '../lib/content'
+
+interface Props {
+  actions?: {
+    copy: string
+    copied: string
+  }
+}
+
+const { actions = { copy: 'Copiar', copied: '¡Copiado!' } } = Astro.props
+---
+
+<div class="command-tabs-widget" data-command-widget>
+  <div class="command-tabs-header">
+    <div class="command-tab-list" role="tablist" aria-label="Installation methods">
+      <button
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="panel-curl"
+        id="tab-curl"
+        class="command-tab active"
+        data-cmd={installCommands.curl}
+        data-tab="curl"
+      >
+        <span class="tab-indicator"></span>
+        curl
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-wget"
+        id="tab-wget"
+        class="command-tab"
+        data-cmd={installCommands.wget}
+        data-tab="wget"
+      >
+        <span class="tab-indicator"></span>
+        wget
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-git"
+        id="tab-git"
+        class="command-tab"
+        data-cmd={installCommands.git}
+        data-tab="git"
+      >
+        <span class="tab-indicator"></span>
+        git
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="panel-inspect"
+        id="tab-inspect"
+        class="command-tab"
+        data-cmd={installCommands.inspect}
+        data-tab="inspect"
+      >
+        <span class="tab-indicator"></span>
+        auditar
+      </button>
+    </div>
+
+    <div class="command-header-actions">
+      <button
+        type="button"
+        class="cmd-copy-btn"
+        data-copy-current-cmd
+        data-state="idle"
+        aria-label="Copy command"
+      >
+        <svg class="copy-icon icon-idle" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg class="copy-icon icon-success" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span class="copy-text" data-copy-label data-label-copy={actions.copy} data-label-copied={actions.copied}>
+          {actions.copy}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div class="command-body">
+    <span class="command-prompt" aria-hidden="true">$</span>
+    <code class="command-line" data-cmd-display>{installCommands.curl}</code>
+  </div>
+
+  <!-- Tech corner plus markers like Better Auth -->
+  <span class="corner-plus corner-tl" aria-hidden="true">+</span>
+  <span class="corner-plus corner-tr" aria-hidden="true">+</span>
+  <span class="corner-plus corner-bl" aria-hidden="true">+</span>
+  <span class="corner-plus corner-br" aria-hidden="true">+</span>
+</div>
+
+<style>
+  .command-tabs-widget {
+    position: relative;
+    max-width: 62rem;
+    margin: 0 auto;
+    border: 1px solid var(--border-strong);
+    background: var(--panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius-m);
+    box-shadow: 0 8px 32px -8px var(--shadow-color);
+    transition: border-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+  }
+
+  .command-tabs-widget:hover {
+    border-color: var(--border-accent);
+  }
+
+  .command-tabs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+    overflow-x: auto;
+  }
+
+  .command-tab-list {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .command-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-s);
+    font-family: var(--font-mono);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    transition: color var(--transition-fast) ease, background-color var(--transition-fast) ease;
+  }
+
+  .command-tab:hover {
+    color: var(--text);
+    background: var(--panel-hover);
+  }
+
+  .command-tab.active {
+    color: var(--text);
+    background: var(--panel-strong);
+  }
+
+  .command-tab.active .tab-indicator {
+    background-color: var(--accent-light);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .tab-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background-color: transparent;
+    transition: background-color var(--transition-fast) ease;
+  }
+
+  .command-header-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .cmd-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel-strong);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    font-weight: 500;
+    transition: all var(--transition-fast) ease;
+  }
+
+  .cmd-copy-btn:hover {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  .cmd-copy-btn[data-state="copied"] {
+    background: #059669;
+    color: #ffffff;
+    border-color: #059669;
+  }
+
+  .copy-icon {
+    flex-shrink: 0;
+  }
+
+  .icon-success {
+    display: none;
+  }
+
+  .cmd-copy-btn[data-state="copied"] .icon-idle {
+    display: none;
+  }
+
+  .cmd-copy-btn[data-state="copied"] .icon-success {
+    display: block;
+  }
+
+  .command-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    overflow-x: auto;
+  }
+
+  .command-prompt {
+    font-family: var(--font-mono);
+    font-size: 1.35rem;
+    color: var(--accent);
+    user-select: none;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+
+  .command-line {
+    font-family: var(--font-mono);
+    font-size: 1.35rem;
+    color: var(--text);
+    white-space: nowrap;
+    line-height: 1.5;
+  }
+
+  /* Plus corners */
+  .corner-plus {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--border-accent);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .corner-tl { top: -6px; left: -5px; }
+  .corner-tr { top: -6px; right: -5px; }
+  .corner-bl { bottom: -6px; left: -5px; }
+  .corner-br { bottom: -6px; right: -5px; }
+
+  @media (max-width: 640px) {
+    .command-tabs-header {
+      flex-wrap: wrap;
+    }
+    .command-body {
+      padding: 12px 14px;
+    }
+    .command-line {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const initWidget = () => {
+      const widget = document.querySelector('[data-command-widget]')
+      if (!widget) return
+
+      const tabs = widget.querySelectorAll<HTMLButtonElement>('.command-tab')
+      const display = widget.querySelector<HTMLElement>('[data-cmd-display]')
+      const copyBtn = widget.querySelector<HTMLButtonElement>('[data-copy-current-cmd]')
+      const copyLabel = widget.querySelector<HTMLElement>('[data-copy-label]')
+
+      let currentCmd = tabs[0]?.getAttribute('data-cmd') || ''
+
+      const labelCopy = copyLabel?.getAttribute('data-label-copy') || 'Copiar'
+      const labelCopied = copyLabel?.getAttribute('data-label-copied') || '¡Copiado!'
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          tabs.forEach((t) => {
+            t.classList.remove('active')
+            t.setAttribute('aria-selected', 'false')
+          })
+          tab.classList.add('active')
+          tab.setAttribute('aria-selected', 'true')
+
+          currentCmd = tab.getAttribute('data-cmd') || ''
+          if (display) {
+            display.textContent = currentCmd
+          }
+        })
+      })
+
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+          if (typeof (window as any).plausible === 'function') {
+            ;(window as any).plausible('Copy Install Command', { props: { command: currentCmd } })
+          }
+
+          try {
+            await navigator.clipboard.writeText(currentCmd)
+            copyBtn.setAttribute('data-state', 'copied')
+            if (copyLabel) copyLabel.textContent = labelCopied
+
+            setTimeout(() => {
+              copyBtn.setAttribute('data-state', 'idle')
+              if (copyLabel) copyLabel.textContent = labelCopy
+            }, 1800)
+          } catch {
+            window.prompt('Copy command:', currentCmd)
+          }
+        })
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initWidget, { once: true })
+    } else {
+      initWidget()
+    }
+  })()
+</script>
